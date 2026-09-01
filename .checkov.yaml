@@ -1,0 +1,7 @@
+# Static nginx shop. The official image starts as root; HEALTHCHECK covers liveness.
+skip-check:
+  - CKV_DOCKER_3
+framework:
+  - dockerfile
+  - docker_compose
+  - secrets

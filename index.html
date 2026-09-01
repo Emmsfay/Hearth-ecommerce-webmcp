@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Hearth is a WebMCP shop. People browse as usual. Agents search, fill the cart, and start checkout on the same live page." />
+    <title>Hearth, goods for the table</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/src/styles.css?v=vault" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
+    <script src="/src/mcp-boot.js?v=reg1"></script>
+  </head>
+  <body>
+    <div class="preheader">
+      <div class="wrap preheader-inner">
+        <p>Sell on Hearth</p>
+        <p>Need help? Open About</p>
+        <p>Promo <strong>HEARTH10</strong> 10% off</p>
+        <p id="webmcp-status" class="pill wait" role="status">WebMCP: checking…</p>
+      </div>
+    </div>
+
+    <header class="mast">
+      <div class="wrap mast-row">
+        <a class="brand" href="#/" id="logo">
+          <img src="/favicon.svg" alt="" width="40" height="40" />
+          <span>Hearth</span>
+        </a>
+        <form id="search-form" class="search" role="search">
+          <label class="sr-only" for="search">Search</label>
+          <input id="search" type="search" placeholder="Search products, brands and categories" />
+          <button type="submit">Search</button>
+        </form>
+        <div class="mast-actions">
+          <div id="account-slot" class="account-slot">
+            <a href="#/login" id="link-login" class="mast-link">Account</a>
+            <a href="#/signup" id="link-signup" class="mast-link">Sign up</a>
+            <span id="who" hidden></span>
+            <button type="button" id="btn-signout" class="text-btn" hidden>Sign out</button>
+          </div>
+          <a href="#/about" class="mast-link">Help</a>
+          <button type="button" id="btn-voice" class="voice-launch" data-voice-open aria-expanded="false" aria-controls="voice-panel">Voice</button>
+          <div class="cart-wrap">
+            <button type="button" id="btn-cart" class="cart-btn" aria-haspopup="true">Cart <span id="cart-count" class="cart-count">0</span></button>
+            <div id="mini-cart" class="mini-cart">
+              <p class="mini-cart-title">Cart</p>
+              <p id="mini-cart-empty" class="mini-cart-empty">Your cart is empty</p>
+              <ul id="mini-cart-lines"></ul>
+              <div id="mini-cart-foot" hidden>
+                <div id="mini-cart-total" class="mini-cart-total"></div>
+                <button type="button" id="btn-mini-checkout">Checkout</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <nav class="catbar" aria-label="Departments">
+      <div class="wrap catbar-row">
+        <a class="dept-link" href="#/about" data-nav="about">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v10H4zM7 8V6a5 5 0 0 1 10 0v2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+          Official Store
+        </a>
+        <div class="dept">
+          <button type="button" data-category="kitchen" aria-haspopup="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h12l1 8H5l-1-8zm13-2h3v6h-2M8 7c0-2 2-3 4-3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+            Kitchen
+          </button>
+          <div class="mega">
+            <div>
+              <p>Cookware</p>
+              <button type="button" data-search="skillet">Skillets</button>
+              <button type="button" data-product="skillet">Cast iron skillet</button>
+              <button type="button" data-category="kitchen">All kitchen</button>
+            </div>
+            <div>
+              <p>Prep</p>
+              <button type="button" data-search="board">Cutting boards</button>
+              <button type="button" data-product="board">Oak cutting board</button>
+              <button type="button" data-search="oak">Oak goods</button>
+            </div>
+            <div>
+              <p>Brands</p>
+              <button type="button" data-category="kitchen">Hearth Kitchen</button>
+              <button type="button" data-search="cast iron">Cast iron</button>
+              <a href="#/about">Official Store</a>
+            </div>
+          </div>
+        </div>
+        <div class="dept">
+          <button type="button" data-category="table" aria-haspopup="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16M6 10v8m12-8v8M4 14h16" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+            Table
+          </button>
+          <div class="mega">
+            <div>
+              <p>Serve</p>
+              <button type="button" data-search="bowl">Serving bowls</button>
+              <button type="button" data-product="bowl">Serving bowl</button>
+              <button type="button" data-category="table">All table</button>
+            </div>
+            <div>
+              <p>Drink &amp; linen</p>
+              <button type="button" data-search="mug">Mugs</button>
+              <button type="button" data-product="mug">Stoneware mug</button>
+              <button type="button" data-search="linen">Linen</button>
+              <button type="button" data-product="napkins">Linen napkin set</button>
+            </div>
+            <div>
+              <p>Brands</p>
+              <button type="button" data-category="table">Hearth Table</button>
+              <button type="button" data-search="stoneware">Stoneware</button>
+              <a href="#/about">Official Store</a>
+            </div>
+          </div>
+        </div>
+        <div class="dept">
+          <button type="button" data-category="care" aria-haspopup="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h16v8H4zM8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+            Home &amp; care
+          </button>
+          <div class="mega">
+            <div>
+              <p>Light</p>
+              <button type="button" data-search="candles">Candles</button>
+              <button type="button" data-product="candles">Beeswax tapers</button>
+              <button type="button" data-category="care">All home &amp; care</button>
+            </div>
+            <div>
+              <p>Wash &amp; rest</p>
+              <button type="button" data-search="soap">Soap</button>
+              <button type="button" data-product="soap">Olive oil soap</button>
+              <button type="button" data-search="throw">Throws</button>
+              <button type="button" data-product="throw">Wool throw</button>
+            </div>
+            <div>
+              <p>Brands</p>
+              <button type="button" data-category="care">Hearth Home</button>
+              <button type="button" data-search="wool">Merino</button>
+              <a href="#/about">Official Store</a>
+            </div>
+          </div>
+        </div>
+        <div class="catbar-links">
+          <a class="dept-link" href="#/shop" data-nav="catalog">All products</a>
+          <a class="dept-link" href="#/" data-nav="home">Home</a>
+          <a class="dept-link" href="#/about" data-nav="about">Help</a>
+        </div>
+      </div>
+    </nav>
+
+    <p id="webmcp-help" class="connect-banner" hidden>
+      ChatGPT can see this shop but still has no site tools until the address bar shows <strong>Site tools</strong>. Use the <strong>ChatGPT desktop</strong> app, model <strong>GPT-5.6 Sol or Terra</strong> (not Luna), and ask: “Use the site tools on this page. Call get_page_title, then run_gift_demo.”
+      <span id="mcp-probe"></span>
+    </p>
+    <p id="ticker" class="ticker" hidden></p>
+
+    <section id="home" class="home">
+      <div class="wrap home-stage">
+        <aside class="cat-menu" aria-label="Categories">
+          <p>Category</p>
+          <button type="button" data-category="all">All products</button>
+          <button type="button" data-category="kitchen">Kitchen</button>
+          <button type="button" data-category="table">Table &amp; dine</button>
+          <button type="button" data-category="care">Home &amp; care</button>
+          <a href="#/about">Official store</a>
+          <a href="#/login">Your account</a>
+        </aside>
+        <div class="hero-banner">
+          <img src="/public/products/skillet.jpg" alt="" />
+          <div class="hero-copy">
+            <p class="eyebrow">Official store</p>
+            <h1>Goods for the table, and the life around it.</h1>
+            <p>Shop as you would on any store. Or ask ChatGPT to find a gift, fill the cart, and start checkout on this same page.</p>
+            <div class="row">
+              <a class="btn-link" href="#/shop">Shop now</a>
+              <button type="button" id="btn-gift-demo" class="ghost">Run gift demo</button>
+            </div>
+          </div>
+        </div>
+        <div class="side-promos">
+          <a href="#/shop">
+            <strong>Pay on delivery</strong>
+            <span>Demo checkout. Nothing is charged.</span>
+          </a>
+          <a href="#/about">
+            <strong>Agent + you</strong>
+            <span data-tool-count>25 site tools. You still confirm.</span>
+          </a>
+          <a href="#/shop">
+            <strong>HEARTH10</strong>
+            <span>10% off every bag.</span>
+          </a>
+        </div>
+      </div>
+
+      <section class="wrap rail">
+        <div class="rail-head">
+          <h2>Flash picks-under £40</h2>
+          <a href="#/shop">See all</a>
+        </div>
+        <div id="home-deals" class="catalog dense"></div>
+      </section>
+
+      <section class="wrap rail">
+        <div class="rail-head">
+          <h2>Shop by category</h2>
+        </div>
+        <div class="cat-tiles">
+          <button type="button" data-category="kitchen">
+            <img src="/public/products/board.jpg" alt="" />
+            <span>Kitchen</span>
+          </button>
+          <button type="button" data-category="table">
+            <img src="/public/products/bowl.jpg" alt="" />
+            <span>Table</span>
+          </button>
+          <button type="button" data-category="care">
+            <img src="/public/products/throw.jpg" alt="" />
+            <span>Home &amp; care</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="wrap rail">
+        <div class="rail-head">
+          <h2>Top selling items</h2>
+          <a href="#/shop">See all</a>
+        </div>
+        <div id="home-featured" class="catalog dense"></div>
+      </section>
+
+      <section class="wrap steps">
+        <article>
+          <p class="eyebrow">01</p>
+          <h3>You browse</h3>
+          <p>Search, filter, and open a product the usual way.</p>
+        </article>
+        <article>
+          <p class="eyebrow">02</p>
+          <h3>The agent helps</h3>
+          <p>ChatGPT uses the same live page: search, cart, checkout.</p>
+        </article>
+        <article>
+          <p class="eyebrow">03</p>
+          <h3>You confirm</h3>
+          <p>Nothing is spent until you are signed in and say yes.</p>
+        </article>
+      </section>
+    </section>
+
+    <section id="shop-intro" class="wrap shop-intro" hidden>
+      <p class="crumb">Home / All products</p>
+      <h1>All products</h1>
+      <p>Eight goods. Search or filter, then add to your cart.</p>
+    </section>
+
+    <nav class="filters wrap" aria-label="Categories" hidden>
+      <button type="button" data-category="all" class="is-on">All</button>
+      <button type="button" data-category="kitchen">Kitchen</button>
+      <button type="button" data-category="table">Table</button>
+      <button type="button" data-category="care">Home &amp; care</button>
+      <label>Max price
+        <select id="max-price">
+          <option value="0">Any</option>
+          <option value="30">£30</option>
+          <option value="60">£60</option>
+          <option value="90">£90</option>
+        </select>
+      </label>
+    </nav>
+
+    <main id="catalog" class="catalog wrap dense" aria-live="polite" hidden></main>
+
+    <section id="product" class="product wrap" hidden></section>
+
+    <section id="about" class="page wrap" hidden>
+      <p class="crumb">Home / About</p>
+      <h1>Made for a person, and an agent, in the same tab.</h1>
+      <p>Hearth is a small home-goods shop for the WebMCP Challenge. You shop with clicks. ChatGPT shops with tools. Both write to the same cart.</p>
+      <h2>How it works</h2>
+      <p>The site registers tools such as <code>search_products</code>, <code>add_to_cart</code>, and <code>place_order</code>. The agent does not scrape buttons. It calls those tools, and you see the page update.</p>
+      <h2>How to test with ChatGPT</h2>
+      <p>Site tools only appear in the <strong>ChatGPT desktop</strong> built-in browser. Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd>, open this site as the only URL, and use <strong>GPT-5.6 Sol or Terra</strong>. The address bar must show <strong>Site tools</strong>.</p>
+      <h2>Your session</h2>
+      <p>Checkout needs a signed-in account in this browser. Demo login: <strong>ada@hearth.shop</strong> / <strong>hearth</strong>.</p>
+      <h2>Customer vault</h2>
+      <p>Name, shipping, likes, and promo stay in this browser’s customer vault so you do not type them again. Agents call <code>get_saved_customer</code> and <code>apply_saved_profile</code>. Sign-in uses <code>use_saved_customer</code>: the password stays in the vault and is never returned to the model — the same idea as <a href="https://infisical.com/ai">Infisical Agent Proxy</a>.</p>
+      <div class="row">
+        <a class="btn-link" href="#/shop">Open the shop</a>
+        <a class="ghost btn-link" href="#/signup">Create an account</a>
+      </div>
+    </section>
+
+    <section id="login" class="page auth-page wrap" hidden>
+      <div class="auth-layout">
+        <div class="auth-copy">
+          <p class="eyebrow">Account</p>
+          <h1>Log in</h1>
+          <p>The same session a person and an agent share in this browser.</p>
+          <p>Demo: <strong>ada@hearth.shop</strong> / <strong>hearth</strong>.</p>
+        </div>
+        <div class="auth-card">
+          <form id="login-form" class="auth-form">
+            <label>Email <input id="login-email" name="email" type="email" autocomplete="username" required /></label>
+            <label>Password <input id="login-password" name="password" type="password" autocomplete="current-password" required /></label>
+            <p id="login-error" class="form-error" hidden></p>
+            <button type="submit">Log in</button>
+          </form>
+          <p>New here? <a href="#/signup">Create an account</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="signup" class="page auth-page wrap" hidden>
+      <div class="auth-layout">
+        <div class="auth-copy">
+          <p class="eyebrow">Account</p>
+          <h1>Create an account</h1>
+          <p>Saved in this browser only. You need an account before checkout.</p>
+        </div>
+        <div class="auth-card">
+          <form id="signup-form" class="auth-form">
+            <label>Full name <input id="signup-name" name="name" autocomplete="name" required /></label>
+            <label>Email <input id="signup-email" name="email" type="email" autocomplete="email" required /></label>
+            <label>Password <input id="signup-password" name="password" type="password" autocomplete="new-password" required minlength="4" /></label>
+            <p id="signup-error" class="form-error" hidden></p>
+            <button type="submit">Create account</button>
+          </form>
+          <p>Already have an account? <a href="#/login">Log in</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="checkout" class="checkout wrap" hidden>
+      <p class="crumb">Home / Cart / Checkout</p>
+      <h2>Checkout</h2>
+      <div id="vault-banner" class="vault-banner" hidden>
+        <p id="vault-banner-copy"></p>
+        <button type="button" id="btn-use-saved" class="ghost">Use saved details</button>
+      </div>
+      <div class="checkout-grid">
+        <form id="checkout-form">
+          <div class="check-block">
+            <h3>1. Customer</h3>
+            <label>Full name <input id="ship-name" name="name" required autocomplete="name" /></label>
+            <label>Email <input id="ship-email" name="email" type="email" required autocomplete="email" /></label>
+          </div>
+          <div class="check-block">
+            <h3>2. Delivery</h3>
+            <label>Address <input id="ship-address" name="address" required autocomplete="street-address" /></label>
+            <div class="split">
+              <label>City <input id="ship-city" name="city" required autocomplete="address-level2" /></label>
+              <label>Postcode <input id="ship-postcode" name="postcode" required autocomplete="postal-code" /></label>
+            </div>
+            <p class="ship-note">Pay on delivery · 2–4 working days · Free on this demo. Nothing is charged.</p>
+          </div>
+          <div class="check-block">
+            <h3>3. Promo</h3>
+            <label>Promo code <input id="promo" name="promo" placeholder="HEARTH10" /></label>
+          </div>
+          <button type="submit">Place order</button>
+        </form>
+        <aside id="checkout-summary" class="summary"></aside>
+      </div>
+    </section>
+
+    <section id="thanks" class="thanks wrap" hidden>
+      <h2>Order confirmed</h2>
+      <p id="thanks-copy"></p>
+      <button type="button" id="btn-again">Continue shopping</button>
+    </section>
+
+    <aside id="cart" class="drawer" hidden>
+      <div class="drawer-card">
+        <div class="drawer-bar">
+          <div>
+            <h2>Cart</h2>
+            <p id="cart-count-label" class="muted">0 items</p>
+          </div>
+          <button type="button" id="btn-close-cart" class="ghost">Close</button>
+        </div>
+        <p id="cart-empty" class="cart-empty" hidden>Your cart is empty. Add an item from the shop.</p>
+        <ul id="cart-lines"></ul>
+        <div id="cart-foot">
+          <div class="cart-promo">
+            <input id="cart-promo" type="text" placeholder="Promo code" />
+            <button type="button" id="btn-cart-promo" class="ghost">Apply</button>
+          </div>
+          <div id="cart-total" class="totals-box"></div>
+          <button type="button" id="btn-to-checkout">Checkout</button>
+          <p class="pay-note">Pay on delivery · Demo shop, not charged</p>
+        </div>
+      </div>
+    </aside>
+
+    <footer class="foot">
+      <div class="wrap foot-grid">
+        <div>
+          <h3>About Hearth</h3>
+          <a href="#/about">About the shop</a>
+          <a href="#/about">WebMCP challenge</a>
+          <a href="#/shop">Official store</a>
+        </div>
+        <div>
+          <h3>Need help?</h3>
+          <a href="#/about">How site tools work</a>
+          <a href="#/login">Your account</a>
+          <a href="#/shop">Track a demo order</a>
+        </div>
+        <div>
+          <h3>Make money</h3>
+          <p>Sell on Hearth is a demo label only. This is not a live marketplace.</p>
+        </div>
+        <div>
+          <h3>Shop with an agent</h3>
+          <p>In ChatGPT’s browser: “Find a gift under £40 for someone who cooks, add it to my cart, apply HEARTH10, and start checkout.”</p>
+        </div>
+      </div>
+      <p class="wrap foot-copy">Demo shop. Orders are not real. Promo HEARTH10 is 10% off.</p>
+    </footer>
+
+    <button type="button" id="btn-voice-fab" class="voice-fab" data-voice-open aria-controls="voice-panel">Voice</button>
+    <aside id="voice-panel" class="voice-panel" hidden>
+      <div class="voice-bar">
+        <div>
+          <p class="voice-kicker">Voice shop</p>
+          <p id="voice-status">Voice ready</p>
+        </div>
+        <button type="button" id="btn-voice-mic" class="cart-btn">Speak</button>
+      </div>
+      <form id="voice-type-form" class="voice-type">
+        <label class="sr-only" for="voice-type">Type a request</label>
+        <input id="voice-type" type="text" placeholder="Or type: add the mug" />
+        <button type="submit" class="ghost">Go</button>
+      </form>
+      <p id="voice-heard" class="voice-heard"></p>
+      <p id="voice-reply" class="voice-reply">Say “find a mug”, “add the skillet”, or “start checkout”.</p>
+      <p id="voice-facts" class="voice-facts"></p>
+      <div id="voice-log" class="voice-log" aria-live="polite"></div>
+      <p class="voice-store">Voice notes stay in <code>hearth-voice-memory</code>. Name, address, and likes for checkout live in the customer vault <code>hearth-customer-vault</code>. Say “use my saved address”.</p>
+      <button type="button" id="btn-voice-forget" class="ghost">Forget memory</button>
+      <button type="button" class="ghost" data-voice-close>Close</button>
+    </aside>
+    <p id="live" class="sr-only" aria-live="polite"></p>
+    <script>
+      document.addEventListener("click", function (event) {
+        var panel = document.getElementById("voice-panel");
+        if (!panel) return;
+        if (event.target.closest("[data-voice-open]")) {
+          event.preventDefault();
+          panel.hidden = false;
+          panel.classList.add("is-open");
+          document.querySelectorAll("[data-voice-open]").forEach(function (btn) {
+            btn.setAttribute("aria-expanded", "true");
+          });
+        }
+        if (event.target.closest("[data-voice-close]")) {
+          event.preventDefault();
+          panel.hidden = true;
+          panel.classList.remove("is-open");
+          document.querySelectorAll("[data-voice-open]").forEach(function (btn) {
+            btn.setAttribute("aria-expanded", "false");
+          });
+        }
+      });
+    </script>
+    <script type="module" src="/src/main.js?v=reg1"></script>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+services:
+  hearth:
+    build: .
+    image: hearth:local
+    ports:
+      - "5176:80"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./src:/usr/share/nginx/html/src:ro
+      - ./public:/usr/share/nginx/html/public:ro
+      - ./favicon.svg:/usr/share/nginx/html/favicon.svg:ro
+    restart: unless-stopped
