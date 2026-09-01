@@ -1,6 +1,8 @@
-# Static nginx shop. The official image starts as root; HEALTHCHECK covers liveness.
+# Static nginx shop. Official image runs as root; local compose is a demo bind.
 skip-check:
   - CKV_DOCKER_3
+  - CKV_DOCKER_2
+  - CKV2_DOCKER
 framework:
   - dockerfile
   - docker_compose

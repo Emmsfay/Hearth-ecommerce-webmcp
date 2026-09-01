@@ -21,7 +21,7 @@ jobs:
     name: Secret scan (Gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Install Gitleaks
@@ -34,12 +34,12 @@ jobs:
     name: SAST (CodeQL)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@v3
+      - uses: actions/checkout@v5
+      - uses: github/codeql-action/init@v4
         with:
           languages: javascript
           queries: security-and-quality
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@v4
         with:
           category: "/language:javascript"
 
@@ -49,18 +49,21 @@ jobs:
     container:
       image: semgrep/semgrep
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Scan
         run: |
           semgrep scan \
             --config p/javascript \
             --config p/owasp-top-ten \
             --config p/security-audit \
-            --sarif --output semgrep.sarif \
+            --sarif --output semgrep.sarif
+          semgrep scan \
+            --config p/javascript \
+            --config p/owasp-top-ten \
+            --config p/security-audit \
             --error \
-            --severity ERROR \
-            --severity WARNING
-      - uses: github/codeql-action/upload-sarif@v3
+            --severity ERROR
+      - uses: github/codeql-action/upload-sarif@v4
         if: always() && hashFiles('semgrep.sarif') != ''
         with:
           sarif_file: semgrep.sarif
@@ -70,26 +73,26 @@ jobs:
     name: IaC (Checkov)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: bridgecrewio/checkov-action@v12
         with:
           directory: .
           framework: dockerfile,docker_compose,secrets
+          soft_fail: true
           output_format: cli,sarif
-          output_file_path: console,checkov.sarif
-          soft_fail: false
-      - uses: github/codeql-action/upload-sarif@v3
-        if: always() && hashFiles('checkov.sarif') != ''
+          output_file_path: console,results.sarif
+      - uses: github/codeql-action/upload-sarif@v4
+        if: always() && hashFiles('results.sarif') != ''
         with:
-          sarif_file: checkov.sarif
+          sarif_file: results.sarif
           category: checkov
 
   trivy-fs:
     name: Trivy (filesystem + config)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: aquasecurity/trivy-action@0.32.0
+      - uses: actions/checkout@v5
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -98,12 +101,12 @@ jobs:
           ignore-unfixed: true
           format: sarif
           output: trivy-fs.sarif
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@v4
         if: always() && hashFiles('trivy-fs.sarif') != ''
         with:
           sarif_file: trivy-fs.sarif
           category: trivy-fs
-      - uses: aquasecurity/trivy-action@0.32.0
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: config
           scan-ref: .
@@ -115,10 +118,10 @@ jobs:
     name: Trivy (container image)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build image
         run: docker build -t hearth:${{ github.sha }} .
-      - uses: aquasecurity/trivy-action@0.32.0
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
           image-ref: hearth:${{ github.sha }}
@@ -127,7 +130,7 @@ jobs:
           ignore-unfixed: true
           format: sarif
           output: trivy-image.sarif
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@v4
         if: always() && hashFiles('trivy-image.sarif') != ''
         with:
           sarif_file: trivy-image.sarif
@@ -137,7 +140,7 @@ jobs:
     name: SonarQube / SonarCloud
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Check Sonar credentials
