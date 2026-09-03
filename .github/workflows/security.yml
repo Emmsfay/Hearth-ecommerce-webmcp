@@ -77,7 +77,7 @@ jobs:
       - uses: bridgecrewio/checkov-action@v12
         with:
           directory: .
-          framework: dockerfile,docker_compose,secrets
+          framework: dockerfile,yaml,secrets
           soft_fail: true
           output_format: cli,sarif
           output_file_path: console,results.sarif

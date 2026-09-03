@@ -5,5 +5,5 @@ skip-check:
   - CKV2_DOCKER
 framework:
   - dockerfile
-  - docker_compose
+  - yaml
   - secrets
