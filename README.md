@@ -14,6 +14,8 @@ The collaboration rule is fixed:
 
 **License:** [MIT](LICENSE)
 
+<img width="1920" height="987" alt="Screenshot (144)" src="https://github.com/user-attachments/assets/42439b4c-78cc-4deb-97b8-d80c55887e07" />
+
 ---
 
 ## What this is
@@ -30,28 +32,6 @@ Human–agent work is visible:
 - **Reset demo session**, so a user starts from an empty cart and empty log.
 
 `recommend_gift` is proposal-only. It does not add to the cart or apply a promo. **You approved** is written only after a trusted click on the page.
-
----
-
-## How it works
-
-```
-ChatGPT desktop ── Site tools ──► webmcp.js ──► app.js (shop state)
-                                      │
-You (clicks / voice) ──────────────► app.js
-                                      │
-                                      ├── collab.js   (proposals, timeline, undo)
-                                      ├── vault.js    (shipping profile, never in tool JSON)
-                                      ├── auth.js     (session in this browser)
-                                      └── products.js (catalog)
-```
-
-1. `mcp-boot.js` looks for `document.modelContext` or `navigator.modelContext` as early as possible.
-2. `main.js` binds the UI, collaboration rail, and voice panel, then calls `registerWebMcp`.
-3. Each tool runs a function in `app.js`. Mutating tools pass `who: "agent"` so the timeline can tell **You** from **Agent**.
-4. Checkout is split: `prepare_order` (or **Review order**) unlocks place; `place_order` without `confirm: true` is refused.
-
-There is no backend. Auth, vault, and voice notes live in `localStorage` in this browser only.
 
 ---
 
@@ -85,6 +65,29 @@ hearth/
 ├── LICENSE
 └── README.md
 ```
+
+
+## How it works
+
+```
+ChatGPT desktop ── Site tools ──► webmcp.js ──► app.js (shop state)
+                                      │
+You (clicks / voice) ──────────────► app.js
+                                      │
+                                      ├── collab.js   (proposals, timeline, undo)
+                                      ├── vault.js    (shipping profile, never in tool JSON)
+                                      ├── auth.js     (session in this browser)
+                                      └── products.js (catalog)
+```
+
+1. `mcp-boot.js` looks for `document.modelContext` or `navigator.modelContext` as early as possible.
+2. `main.js` binds the UI, collaboration rail, and voice panel, then calls `registerWebMcp`.
+3. Each tool runs a function in `app.js`. Mutating tools pass `who: "agent"` so the timeline can tell **You** from **Agent**.
+4. Checkout is split: `prepare_order` (or **Review order**) unlocks place; `place_order` without `confirm: true` is refused.
+
+There is no backend. Auth, vault, and voice notes live in `localStorage` in this browser only.
+
+---
 
 ### Pages and chrome — `index.html`
 
