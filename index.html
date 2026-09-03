@@ -6,18 +6,18 @@
     <meta name="description" content="Hearth is a WebMCP shop. People browse as usual. Agents search, fill the cart, and start checkout on the same live page." />
     <title>Hearth, goods for the table</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/src/styles.css?v=vault" />
+    <link rel="stylesheet" href="/src/styles.css?v=shop2" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
-    <script src="/src/mcp-boot.js?v=reg1"></script>
+    <script src="/src/mcp-boot.js?v=reg2"></script>
   </head>
   <body>
     <div class="preheader">
       <div class="wrap preheader-inner">
         <p>Sell on Hearth</p>
-        <p>Need help? Open About</p>
-        <p>Promo <strong>HEARTH10</strong> 10% off</p>
+        <p>Need help?<br>Open About</br></p>
+        <p>Get 10% off on every purchase</p>
         <p id="webmcp-status" class="pill wait" role="status">WebMCP: checking…</p>
       </div>
     </div>
@@ -41,7 +41,7 @@
             <button type="button" id="btn-signout" class="text-btn" hidden>Sign out</button>
           </div>
           <a href="#/about" class="mast-link">Help</a>
-          <button type="button" id="btn-voice" class="voice-launch" data-voice-open aria-expanded="false" aria-controls="voice-panel">Voice</button>
+          <button type="button" class="ghost reset-demo" data-reset-demo>Reset demo session</button>
           <div class="cart-wrap">
             <button type="button" id="btn-cart" class="cart-btn" aria-haspopup="true">Cart <span id="cart-count" class="cart-count">0</span></button>
             <div id="mini-cart" class="mini-cart">
@@ -153,10 +153,25 @@
     </nav>
 
     <p id="webmcp-help" class="connect-banner" hidden>
-      ChatGPT can see this shop but still has no site tools until the address bar shows <strong>Site tools</strong>. Use the <strong>ChatGPT desktop</strong> app, model <strong>GPT-5.6 Sol or Terra</strong> (not Luna), and ask: “Use the site tools on this page. Call get_page_title, then run_gift_demo.”
+      ChatGPT can see this shop but still has no site tools until the address bar shows <strong>Site tools</strong>. Use the <strong>ChatGPT desktop</strong> app, model <strong>GPT-5.6 Sol or Terra</strong> (not Luna), and ask: “Use the site tools on this page. Call recommend_gift, wait for me to approve, then prepare_order.”
       <span id="mcp-probe"></span>
     </p>
     <p id="ticker" class="ticker" hidden></p>
+
+    <aside id="collab-rail" class="collab-rail wrap" aria-label="Shared decisions">
+      <div class="collab-head">
+        <div>
+          <p class="collab-kicker">Shared decision</p>
+          <p class="collab-lead">The agent proposes. You approve. Then you review before anything is placed.</p>
+        </div>
+        <div class="collab-actions">
+          <button type="button" class="ghost reset-demo" data-reset-demo>Reset demo session</button>
+          <button type="button" id="btn-undo" class="ghost" hidden>Undo last</button>
+        </div>
+      </div>
+      <div id="proposal-card" class="proposal-card" hidden></div>
+      <ul id="activity-log" class="activity-log"></ul>
+    </aside>
 
     <section id="home" class="home">
       <div class="wrap home-stage">
@@ -188,7 +203,7 @@
           </a>
           <a href="#/about">
             <strong>Agent + you</strong>
-            <span data-tool-count>25 site tools. You still confirm.</span>
+            <span data-tool-count>31 site tools. You still confirm.</span>
           </a>
           <a href="#/shop">
             <strong>HEARTH10</strong>
@@ -247,23 +262,28 @@
         <article>
           <p class="eyebrow">03</p>
           <h3>You confirm</h3>
-          <p>Nothing is spent until you are signed in and say yes.</p>
+          <p>Approve a proposal, review the order, then place it. Nothing is spent until you say yes.</p>
         </article>
       </section>
     </section>
 
     <section id="shop-intro" class="wrap shop-intro" hidden>
-      <p class="crumb">Home / All products</p>
-      <h1>All products</h1>
-      <p>Eight goods. Search or filter, then add to your cart.</p>
+      <div class="shop-intro-copy">
+        <p class="crumb">Home / All products</p>
+        <h1>All products</h1>
+        <p class="shop-lead">Eight pieces for the table and the kitchen. Filter here, or let the agent propose and you still approve what goes in the bag.</p>
+      </div>
+      <p class="shop-count" id="shop-count">8 goods</p>
     </section>
 
     <nav class="filters wrap" aria-label="Categories" hidden>
-      <button type="button" data-category="all" class="is-on">All</button>
-      <button type="button" data-category="kitchen">Kitchen</button>
-      <button type="button" data-category="table">Table</button>
-      <button type="button" data-category="care">Home &amp; care</button>
-      <label>Max price
+      <div class="filter-pills">
+        <button type="button" data-category="all" class="is-on">All</button>
+        <button type="button" data-category="kitchen">Kitchen</button>
+        <button type="button" data-category="table">Table</button>
+        <button type="button" data-category="care">Home &amp; care</button>
+      </div>
+      <label class="filter-price">Max price
         <select id="max-price">
           <option value="0">Any</option>
           <option value="30">£30</option>
@@ -273,25 +293,64 @@
       </label>
     </nav>
 
-    <main id="catalog" class="catalog wrap dense" aria-live="polite" hidden></main>
+    <main id="catalog" class="catalog wrap" aria-live="polite" hidden></main>
 
     <section id="product" class="product wrap" hidden></section>
 
-    <section id="about" class="page wrap" hidden>
-      <p class="crumb">Home / About</p>
-      <h1>Made for a person, and an agent, in the same tab.</h1>
-      <p>Hearth is a small home-goods shop for the WebMCP Challenge. You shop with clicks. ChatGPT shops with tools. Both write to the same cart.</p>
-      <h2>How it works</h2>
-      <p>The site registers tools such as <code>search_products</code>, <code>add_to_cart</code>, and <code>place_order</code>. The agent does not scrape buttons. It calls those tools, and you see the page update.</p>
-      <h2>How to test with ChatGPT</h2>
-      <p>Site tools only appear in the <strong>ChatGPT desktop</strong> built-in browser. Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd>, open this site as the only URL, and use <strong>GPT-5.6 Sol or Terra</strong>. The address bar must show <strong>Site tools</strong>.</p>
-      <h2>Your session</h2>
-      <p>Checkout needs a signed-in account in this browser. Demo login: <strong>ada@hearth.shop</strong> / <strong>hearth</strong>.</p>
-      <h2>Customer vault</h2>
-      <p>Name, shipping, likes, and promo stay in this browser’s customer vault so you do not type them again. Agents call <code>get_saved_customer</code> and <code>apply_saved_profile</code>. Sign-in uses <code>use_saved_customer</code>: the password stays in the vault and is never returned to the model — the same idea as <a href="https://infisical.com/ai">Infisical Agent Proxy</a>.</p>
-      <div class="row">
-        <a class="btn-link" href="#/shop">Open the shop</a>
-        <a class="ghost btn-link" href="#/signup">Create an account</a>
+    <section id="about" class="about wrap" hidden>
+      <header class="about-hero">
+        <p class="crumb">Home / About</p>
+        <p class="eyebrow">WebMCP Challenge</p>
+        <h1>A person and an agent. Same cart. Same tab.</h1>
+        <p class="about-lead">Hearth is a home goods shop built for shared shopping. You click, ChatGPT calls the site tools and both write to one live cart the agent proposes, you decide.</p>
+        <div class="about-actions">
+          <a class="btn-link" href="#/shop">Open the shop</a>
+          <a class="ghost btn-link" href="#/signup">Create an account</a>
+        </div>
+      </header>
+      <ol class="about-flow">
+        <li>
+          <span class="about-step">01</span>
+          <h2>Propose</h2>
+          <p>The agent calls <code>recommend_gift</code>. A trade-off card appears. The bag stays empty.</p>
+        </li>
+        <li>
+          <span class="about-step">02</span>
+          <h2>Approve</h2>
+          <p>You click Approve on the page. Only then does the pick land in the cart.</p>
+        </li>
+        <li>
+          <span class="about-step">03</span>
+          <h2>Prepare</h2>
+          <p><code>explain_cart</code> then <code>prepare_order</code>. Review is required. Place stays locked.</p>
+        </li>
+        <li>
+          <span class="about-step">04</span>
+          <h2>Confirm</h2>
+          <p><code>place_order</code> without <code>confirm:true</code> is blocked. You still have the last word.</p>
+        </li>
+      </ol>
+      <div class="about-grid">
+        <article class="about-card">
+          <p class="eyebrow">Tools</p>
+          <h2>How it works</h2>
+          <p>The page registers site tools. The agent does not scrape buttons. Gift recommendations, comparisons, cart explanation, and checkout preparation all run on this live shop.</p>
+        </article>
+        <article class="about-card">
+          <p class="eyebrow">Desktop</p>
+          <h2>How to test</h2>
+          <p>Open Hearth as the only URL in the <strong>ChatGPT desktop</strong> browser (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd>). Use <strong>GPT-5.6 Sol or Terra</strong>. The address bar must show <strong>Site tools</strong>.</p>
+        </article>
+        <article class="about-card">
+          <p class="eyebrow">Demo</p>
+          <h2>Your session</h2>
+          <p>Checkout needs a signed-in account in this browser. Use <strong>ada@hearth.shop</strong> / <strong>hearth</strong>, or create your own. Reset demo session clears the cart and timeline.</p>
+        </article>
+        <article class="about-card">
+          <p class="eyebrow">Privacy</p>
+          <h2>Customer vault</h2>
+          <p>Shipping stays in this browser. Tools return <strong>profile status only</strong>. The address is not written into checkout until you click, <strong>Use saved details</strong> or <strong>Show saved address</strong>.</p>
+        </article>
       </div>
     </section>
 
@@ -301,12 +360,27 @@
           <p class="eyebrow">Account</p>
           <h1>Log in</h1>
           <p>The same session a person and an agent share in this browser.</p>
-          <p>Demo: <strong>ada@hearth.shop</strong> / <strong>hearth</strong>.</p>
         </div>
         <div class="auth-card">
           <form id="login-form" class="auth-form">
             <label>Email <input id="login-email" name="email" type="email" autocomplete="username" required /></label>
-            <label>Password <input id="login-password" name="password" type="password" autocomplete="current-password" required /></label>
+            <label>Password
+              <span class="password-field">
+                <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+                <button type="button" class="password-toggle" data-password-toggle="login-password" aria-label="Show password" aria-pressed="false">
+                  <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M2.1 12s3.4-7 9.9-7 9.9 7 9.9 7-3.4 7-9.9 7-9.9-7-9.9-7Z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3.1 3.1 20.9 20.9" />
+                    <path d="M9.9 5.2A10.4 10.4 0 0 1 12 5c4.8 0 8.8 3.2 10.1 7.5a10.6 10.6 0 0 1-3.4 4.9" />
+                    <path d="M6.2 6.2A10.5 10.5 0 0 0 1.9 12C3.2 16.3 7.2 19.5 12 19.5c1 0 2-.1 2.9-.4" />
+                    <path d="m14.1 9.9-4.2 4.2a3 3 0 0 1 0-4.2 3 3 0 0 1 4.2 0Z" />
+                  </svg>
+                </button>
+              </span>
+            </label>
             <p id="login-error" class="form-error" hidden></p>
             <button type="submit">Log in</button>
           </form>
@@ -326,7 +400,23 @@
           <form id="signup-form" class="auth-form">
             <label>Full name <input id="signup-name" name="name" autocomplete="name" required /></label>
             <label>Email <input id="signup-email" name="email" type="email" autocomplete="email" required /></label>
-            <label>Password <input id="signup-password" name="password" type="password" autocomplete="new-password" required minlength="4" /></label>
+            <label>Password
+              <span class="password-field">
+                <input id="signup-password" name="password" type="password" autocomplete="new-password" required minlength="4" />
+                <button type="button" class="password-toggle" data-password-toggle="signup-password" aria-label="Show password" aria-pressed="false">
+                  <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M2.1 12s3.4-7 9.9-7 9.9 7 9.9 7-3.4 7-9.9 7-9.9-7-9.9-7Z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3.1 3.1 20.9 20.9" />
+                    <path d="M9.9 5.2A10.4 10.4 0 0 1 12 5c4.8 0 8.8 3.2 10.1 7.5a10.6 10.6 0 0 1-3.4 4.9" />
+                    <path d="M6.2 6.2A10.5 10.5 0 0 0 1.9 12C3.2 16.3 7.2 19.5 12 19.5c1 0 2-.1 2.9-.4" />
+                    <path d="m14.1 9.9-4.2 4.2a3 3 0 0 1 0-4.2 3 3 0 0 1 4.2 0Z" />
+                  </svg>
+                </button>
+              </span>
+            </label>
             <p id="signup-error" class="form-error" hidden></p>
             <button type="submit">Create account</button>
           </form>
@@ -340,7 +430,10 @@
       <h2>Checkout</h2>
       <div id="vault-banner" class="vault-banner" hidden>
         <p id="vault-banner-copy"></p>
-        <button type="button" id="btn-use-saved" class="ghost">Use saved details</button>
+        <div class="vault-banner-actions">
+          <button type="button" id="btn-use-saved" class="ghost">Use saved details</button>
+          <button type="button" id="btn-reveal-saved" class="text-btn">Show saved address</button>
+        </div>
       </div>
       <div class="checkout-grid">
         <form id="checkout-form">
@@ -351,18 +444,26 @@
           </div>
           <div class="check-block">
             <h3>2. Delivery</h3>
-            <label>Address <input id="ship-address" name="address" required autocomplete="street-address" /></label>
+            <label>Address <input id="ship-address" name="address" autocomplete="off" placeholder="Hidden unless you show it" /></label>
             <div class="split">
-              <label>City <input id="ship-city" name="city" required autocomplete="address-level2" /></label>
-              <label>Postcode <input id="ship-postcode" name="postcode" required autocomplete="postal-code" /></label>
+              <label>City <input id="ship-city" name="city" autocomplete="off" /></label>
+              <label>Postcode <input id="ship-postcode" name="postcode" autocomplete="off" /></label>
             </div>
-            <p class="ship-note">Pay on delivery · 2–4 working days · Free on this demo. Nothing is charged.</p>
+            <p class="ship-note">Pay on delivery· It takes 2–4 working days. Free on this demo and nothing is charged.</p>
           </div>
           <div class="check-block">
             <h3>3. Promo</h3>
             <label>Promo code <input id="promo" name="promo" placeholder="HEARTH10" /></label>
           </div>
-          <button type="submit">Place order</button>
+          <div id="order-confirm" class="order-confirm" hidden>
+            <h3>Review this order</h3>
+            <div id="order-confirm-body"></div>
+          </div>
+          <div class="checkout-actions">
+            <button type="button" id="btn-review-order" class="ghost">Review order</button>
+            <button type="submit" id="btn-place-order" disabled>Place order</button>
+          </div>
+          <p id="place-hint" class="ship-note">Review the order before placing. The agent must call prepare_order first if it is placing for you.</p>
         </form>
         <aside id="checkout-summary" class="summary"></aside>
       </div>
@@ -417,10 +518,10 @@
         </div>
         <div>
           <h3>Shop with an agent</h3>
-          <p>In ChatGPT’s browser: “Find a gift under £40 for someone who cooks, add it to my cart, apply HEARTH10, and start checkout.”</p>
+          <p>In ChatGPT’s browser: “Recommend a gift under £40 for someone who cooks. Wait for me to approve, then prepare the order.”</p>
         </div>
       </div>
-      <p class="wrap foot-copy">Demo shop. Orders are not real. Promo HEARTH10 is 10% off.</p>
+      <p class="wrap foot-copy">This is a demo shop, orders are not real.</p>
     </footer>
 
     <button type="button" id="btn-voice-fab" class="voice-fab" data-voice-open aria-controls="voice-panel">Voice</button>
@@ -433,12 +534,12 @@
         <button type="button" id="btn-voice-mic" class="cart-btn">Speak</button>
       </div>
       <form id="voice-type-form" class="voice-type">
-        <label class="sr-only" for="voice-type">Type a request</label>
-        <input id="voice-type" type="text" placeholder="Or type: add the mug" />
+        <label class="sr-only" for="voice-type">Type an order</label>
+        <input id="voice-type" type="text" placeholder="Or type what you want to order" />
         <button type="submit" class="ghost">Go</button>
       </form>
       <p id="voice-heard" class="voice-heard"></p>
-      <p id="voice-reply" class="voice-reply">Say “find a mug”, “add the skillet”, or “start checkout”.</p>
+      <p id="voice-reply" class="voice-reply">Hello. What would you like to order?</p>
       <p id="voice-facts" class="voice-facts"></p>
       <div id="voice-log" class="voice-log" aria-live="polite"></div>
       <p class="voice-store">Voice notes stay in <code>hearth-voice-memory</code>. Name, address, and likes for checkout live in the customer vault <code>hearth-customer-vault</code>. Say “use my saved address”.</p>
@@ -468,6 +569,6 @@
         }
       });
     </script>
-    <script type="module" src="/src/main.js?v=reg1"></script>
+    <script type="module" src="/src/main.js?v=priv4"></script>
   </body>
 </html>

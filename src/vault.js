@@ -107,6 +107,29 @@ export function publicCustomer(email) {
   };
 }
 
+export function profileStatus(email) {
+  const row = email ? getVaultRecord(email) : null;
+  if (!row) {
+    return {
+      available: false,
+      status: "no saved shipping profile",
+      passwordReturned: false,
+    };
+  }
+  const hasShipping = Boolean(row.shipping?.address);
+  return {
+    available: true,
+    firstName: (row.name || "").trim().split(/\s+/)[0] || null,
+    email: row.email,
+    hasShipping,
+    hasPhone: Boolean(row.phone),
+    likesOnFile: Boolean(row.preferences?.likes?.length),
+    promoOnFile: Boolean(row.preferences?.promo),
+    status: hasShipping ? "saved shipping profile available" : "account on file, no shipping yet",
+    passwordReturned: false,
+  };
+}
+
 export function upsertCustomer(email, patch = {}) {
   const key = keyOf(email);
   if (!key) return null;
@@ -149,23 +172,26 @@ export function recordCustomerOrder(email, order) {
   return publicCustomer(key);
 }
 
-export function applyCustomerToForm(email) {
+export function shippingFromVault(email) {
   const row = getVaultRecord(email);
-  if (!row) return { ok: false, message: "No saved customer for that email." };
-  const fields = {
-    name: row.name,
-    email: row.email,
+  if (!row) return null;
+  return {
+    name: row.name || "",
+    email: row.email || "",
     address: row.shipping?.address || "",
     city: row.shipping?.city || "",
     postcode: row.shipping?.postcode || "",
     promo: row.preferences?.promo || "HEARTH10",
+    hasShipping: Boolean(row.shipping?.address),
   };
+}
+
+export function applyIdentityToForm(email) {
+  const fields = shippingFromVault(email);
+  if (!fields) return { ok: false, message: "No saved customer for that email." };
   const map = {
     name: "#ship-name",
     email: "#ship-email",
-    address: "#ship-address",
-    city: "#ship-city",
-    postcode: "#ship-postcode",
     promo: "#promo",
   };
   for (const [field, selector] of Object.entries(map)) {
@@ -174,10 +200,29 @@ export function applyCustomerToForm(email) {
   }
   return {
     ok: true,
-    message: "Saved customer applied to checkout. The agent did not receive a password.",
-    customer: publicCustomer(email),
-    fields,
+    message: "Name and email applied. Street and phone were not written to the page.",
+    promo: fields.promo,
+    hasShipping: fields.hasShipping,
   };
+}
+
+export function revealShippingToForm(email) {
+  const fields = shippingFromVault(email);
+  if (!fields?.hasShipping) return { ok: false, message: "No saved shipping profile." };
+  const map = {
+    address: "#ship-address",
+    city: "#ship-city",
+    postcode: "#ship-postcode",
+  };
+  for (const [field, selector] of Object.entries(map)) {
+    const node = document.querySelector(selector);
+    if (node && fields[field]) node.value = fields[field];
+  }
+  return { ok: true, message: "Saved address is now visible on the form." };
+}
+
+export function applyCustomerToForm(email) {
+  return applyIdentityToForm(email);
 }
 
 export function vaultPassword(email) {
@@ -202,8 +247,5 @@ export function rememberCustomerLike(email, like) {
 
 export function listPublicCustomers() {
   seedVault();
-  return Object.keys(readVault()).map((email) => {
-    const row = publicCustomer(email);
-    return { name: row.name, email: row.email, city: row.shipping.city || "", likes: row.preferences.likes };
-  });
+  return Object.keys(readVault()).map((email) => profileStatus(email));
 }

@@ -1,13 +1,27 @@
 import { products, categories, findProduct, money } from "./products.js";
 import { getSession, publicAccount, signIn as authSignIn, signOut as authSignOut, signUp as authSignUp } from "./auth.js";
 import {
-  applyCustomerToForm,
-  listPublicCustomers,
+  applyIdentityToForm,
+  profileStatus,
   publicCustomer,
   recordCustomerOrder,
+  revealShippingToForm,
+  shippingFromVault,
   upsertCustomer,
   vaultPassword,
 } from "./vault.js";
+import {
+  clearProposal,
+  getActivity,
+  getProposal,
+  hasEventVerb,
+  logEvent,
+  resetCollab,
+  retractEventsByVerb,
+  setProposal,
+  snapshotCart,
+  undoLast,
+} from "./collab.js";
 
 const state = {
   query: "",
@@ -18,6 +32,20 @@ const state = {
   lastOrder: null,
   view: "home",
   afterLogin: null,
+  prepared: false,
+  useSavedShipping: false,
+  shippingRevealed: false,
+};
+
+const productNotes = {
+  mug: { use: "Everyday drinking", weight: "light", forWhom: "anyone", ship: "Easy, low delivery impact" },
+  napkins: { use: "Table setting or host gift", weight: "very light", forWhom: "hosts", ship: "Easy to ship" },
+  skillet: { use: "Daily cooking", weight: "heavy", forWhom: "a cook", ship: "Heavier delivery" },
+  board: { use: "Prep and serving", weight: "medium-heavy", forWhom: "a cook", ship: "Bulky to ship" },
+  bowl: { use: "Serving or host gift", weight: "heavier", forWhom: "a cook or host", ship: "Bulkier than a mug" },
+  candles: { use: "Atmosphere", weight: "light", forWhom: "anyone", ship: "Easy, handle with care" },
+  soap: { use: "Sink or guest bath", weight: "very light", forWhom: "anyone", ship: "Easiest to ship" },
+  throw: { use: "Sofa or bed", weight: "medium", forWhom: "homebodies", ship: "Bulky but soft" },
 };
 
 const els = {};
@@ -54,6 +82,10 @@ export function bindUi() {
   els.linkLogin = document.querySelector("#link-login");
   els.linkSignup = document.querySelector("#link-signup");
   els.btnSignOut = document.querySelector("#btn-signout");
+  els.orderConfirm = document.querySelector("#order-confirm");
+  els.orderConfirmBody = document.querySelector("#order-confirm-body");
+  els.placeOrder = document.querySelector("#btn-place-order");
+  els.placeHint = document.querySelector("#place-hint");
 
   document.querySelector("#search-form").addEventListener("submit", (event) => {
     event.preventDefault();
@@ -100,11 +132,17 @@ export function bindUi() {
   });
   document.querySelector("#checkout-form").addEventListener("submit", (event) => {
     event.preventDefault();
+    if (!state.prepared) {
+      announce("Review the order first.");
+      return;
+    }
     placeOrder(formData(), true, "you");
   });
+  document.querySelector("#btn-review-order")?.addEventListener("click", () => prepareOrder("you"));
   document.querySelector("#promo").addEventListener("change", (event) => {
     applyPromo(event.target.value, "you");
   });
+  bindPasswordToggles();
   document.querySelector("#login-form").addEventListener("submit", (event) => {
     event.preventDefault();
     signIn({
@@ -121,14 +159,32 @@ export function bindUi() {
     }, "you");
   });
   els.btnSignOut.addEventListener("click", () => signOut("you"));
-  document.querySelector("#btn-use-saved")?.addEventListener("click", () => applySavedProfile(undefined, "you"));
+  document.querySelector("#btn-use-saved")?.addEventListener("click", () => markUseSavedShipping("you"));
+  document.querySelector("#btn-reveal-saved")?.addEventListener("click", () => revealSavedShipping("you"));
+  document.querySelectorAll("[data-reset-demo]").forEach((button) => {
+    button.addEventListener("click", () => resetDemoSession());
+  });
 
   window.addEventListener("hashchange", () => applyRoute(location.hash));
   renderAccount();
   renderCart();
   renderFeatured();
+  updatePlaceButton();
   if (!location.hash) location.hash = "/";
   else applyRoute(location.hash);
+}
+
+function bindPasswordToggles() {
+  document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+    const input = document.getElementById(button.dataset.passwordToggle);
+    if (!input) return;
+    button.addEventListener("click", () => {
+      const reveal = input.type === "password";
+      input.type = reveal ? "text" : "password";
+      button.setAttribute("aria-pressed", reveal ? "true" : "false");
+      button.setAttribute("aria-label", reveal ? "Hide password" : "Show password");
+    });
+  });
 }
 
 function bindHoverPopups() {
@@ -173,37 +229,72 @@ function formData() {
   };
 }
 
-function fillForm(fields) {
+function fillForm(fields, { allowShipping = false } = {}) {
   const map = {
     name: "#ship-name",
     email: "#ship-email",
-    address: "#ship-address",
-    city: "#ship-city",
-    postcode: "#ship-postcode",
     promo: "#promo",
   };
+  if (allowShipping) {
+    map.address = "#ship-address";
+    map.city = "#ship-city";
+    map.postcode = "#ship-postcode";
+  }
   for (const [key, selector] of Object.entries(map)) {
     if (fields[key]) document.querySelector(selector).value = fields[key];
   }
 }
 
+function clearCheckoutFields() {
+  ["#ship-name", "#ship-email", "#ship-address", "#ship-city", "#ship-postcode"].forEach((selector) => {
+    const node = document.querySelector(selector);
+    if (node) node.value = "";
+  });
+  state.useSavedShipping = false;
+  state.shippingRevealed = false;
+}
+
+function checkoutData() {
+  const typed = formData();
+  const session = getSession();
+  const vault = session ? shippingFromVault(session.email) : null;
+  if (state.shippingRevealed) return typed;
+  if ((state.useSavedShipping || (!typed.address && vault?.hasShipping)) && vault) {
+    return {
+      name: typed.name || vault.name,
+      email: typed.email || vault.email,
+      address: vault.address,
+      city: vault.city,
+      postcode: vault.postcode,
+      promo: typed.promo || vault.promo,
+    };
+  }
+  return typed;
+}
+
 function renderVaultBanner() {
   const banner = document.querySelector("#vault-banner");
   const copy = document.querySelector("#vault-banner-copy");
+  const reveal = document.querySelector("#btn-reveal-saved");
   if (!banner || !copy) return;
   const session = getSession();
-  const profile = session ? publicCustomer(session.email) : null;
-  if (!profile) {
+  const status = session ? profileStatus(session.email) : null;
+  if (!status?.available) {
     banner.hidden = true;
     copy.textContent = "";
     return;
   }
   banner.hidden = false;
-  const ship = profile.shipping || {};
-  const place = [ship.address, ship.city, ship.postcode].filter(Boolean).join(", ");
-  copy.textContent = place
-    ? `On file: ${profile.name} · ${place}. The agent can pull this — you do not need to type it again.`
-    : `On file: ${profile.name} <${profile.email}>. Add an address once and it stays in the vault.`;
+  if (state.shippingRevealed) {
+    copy.textContent = "Saved address is visible on this form so you can edit it. The agent should not copy it.";
+  } else if (state.useSavedShipping && status.hasShipping) {
+    copy.textContent = "Using saved shipping profile at place time. Street and phone are hidden from this page.";
+  } else if (status.hasShipping) {
+    copy.textContent = "Saved shipping profile available. Use it without showing the address, or reveal it to edit.";
+  } else {
+    copy.textContent = "Account on file. No shipping profile yet — type an address to save one.";
+  }
+  if (reveal) reveal.hidden = !status.hasShipping;
 }
 
 function prefillCheckoutFromAccount() {
@@ -212,14 +303,10 @@ function prefillCheckoutFromAccount() {
     renderVaultBanner();
     return;
   }
-  const address = document.querySelector("#ship-address");
-  if (!address?.value) {
-    const applied = applyCustomerToForm(session.email);
-    if (applied.ok && applied.fields.promo) applyPromo(applied.fields.promo, "shop");
-  } else {
-    if (!document.querySelector("#ship-name").value) document.querySelector("#ship-name").value = session.name;
-    if (!document.querySelector("#ship-email").value) document.querySelector("#ship-email").value = session.email;
-  }
+  const applied = applyIdentityToForm(session.email);
+  if (applied.ok && applied.promo && !state.promo) applyPromo(applied.promo, "shop");
+  if (!document.querySelector("#ship-name").value) document.querySelector("#ship-name").value = session.name;
+  if (!document.querySelector("#ship-email").value) document.querySelector("#ship-email").value = session.email;
   renderVaultBanner();
 }
 
@@ -299,6 +386,7 @@ function applyRoute(hash) {
   }
   if (view === "checkout") {
     if (!state.cart.length) {
+      clearCheckoutFields();
       showOnly("catalog");
       renderCatalog();
       history.replaceState(null, "", "#/shop");
@@ -315,6 +403,8 @@ function applyRoute(hash) {
     prefillCheckoutFromAccount();
     showOnly("checkout");
     renderCheckoutSummary();
+    renderOrderReview();
+    updatePlaceButton();
     renderVaultBanner();
     return;
   }
@@ -348,6 +438,30 @@ function afterAuthSuccess(who) {
   if (next === "checkout") return startCheckout(who);
   showCatalog();
   return publicAccount();
+}
+
+export function resetDemoSession() {
+  state.cart = [];
+  state.promo = "";
+  state.lastOrder = null;
+  state.prepared = false;
+  state.afterLogin = null;
+  clearCheckoutFields();
+  const promoField = document.querySelector("#promo");
+  const cartPromo = document.querySelector("#cart-promo");
+  if (promoField) promoField.value = "";
+  if (cartPromo) cartPromo.value = "";
+  const thanksCopy = document.querySelector("#thanks-copy");
+  if (thanksCopy) thanksCopy.textContent = "";
+  resetCollab();
+  renderCart();
+  hideCart();
+  showHome();
+  announce("Demo session reset. Cart and activity are empty.");
+  return {
+    ok: true,
+    message: "Demo session reset. Cart and activity are empty.",
+  };
 }
 
 export function showHome() {
@@ -399,18 +513,25 @@ function offLabel(item) {
   return `-${Math.round((1 - item.price / item.was) * 100)}%`;
 }
 
+const categoryLabel = {
+  table: "Table",
+  kitchen: "Kitchen",
+  care: "Home & care",
+};
+
 function productCard(item) {
   const button = document.createElement("button");
   button.className = "card";
   button.type = "button";
   const off = offLabel(item);
-  button.innerHTML = `<div class="card-media">${off ? `<span class="off"></span>` : ""}<img alt=""></div><div class="card-body"><h3></h3><p class="price-row"><span class="now"></span>${item.was ? `<s class="was"></s>` : ""}</p><p class="meta"></p></div>`;
+  button.innerHTML = `<div class="card-media">${off ? `<span class="off"></span>` : ""}<img alt=""></div><div class="card-body"><p class="card-cat"></p><h3></h3><p class="card-blurb"></p><p class="price-row"><span class="now"></span>${item.was ? `<s class="was"></s>` : ""}</p></div>`;
   setPhoto(button.querySelector("img"), item);
+  button.querySelector(".card-cat").textContent = categoryLabel[item.category] || item.category;
   button.querySelector("h3").textContent = item.name;
+  button.querySelector(".card-blurb").textContent = item.blurb;
   button.querySelector(".now").textContent = money(item.price);
   if (item.was) button.querySelector(".was").textContent = money(item.was);
   if (off) button.querySelector(".off").textContent = off;
-  button.querySelector(".meta").textContent = "Official Store";
   button.addEventListener("click", () => openProduct(item.id, "you"));
   return button;
 }
@@ -434,10 +555,16 @@ function renderFeatured() {
 function renderCatalog() {
   const list = visibleProducts();
   els.catalog.replaceChildren();
+  const count = document.querySelector("#shop-count");
+  if (count) count.textContent = `${list.length} good${list.length === 1 ? "" : "s"}`;
   if (!list.length) {
     const empty = document.createElement("p");
-    empty.textContent = "No goods match that search.";
+    empty.className = "shop-empty";
+    empty.textContent = "No goods match that search. Clear the filters or try another word.";
     els.catalog.append(empty);
+    document.querySelectorAll("[data-category]").forEach((button) => {
+      button.classList.toggle("is-on", button.dataset.category === state.category);
+    });
     return;
   }
   for (const item of list) els.catalog.append(productCard(item));
@@ -488,6 +615,8 @@ function renderCart() {
   const cartPromo = document.querySelector("#cart-promo");
   if (cartPromo && document.activeElement !== cartPromo) cartPromo.value = state.promo;
   renderCheckoutSummary();
+  renderOrderReview();
+  updatePlaceButton();
 }
 
 function renderMiniCart(count) {
@@ -569,6 +698,13 @@ export function searchProducts(query, who = "agent") {
   showCatalog();
   const list = visibleProducts();
   announce(`${who === "agent" ? "Agent" : "You"} searched for “${state.query || "everything"}”.`);
+  if (who !== "shop") {
+    logEvent({
+      who,
+      verb: "searched",
+      detail: `Searched for “${state.query || "everything"}”.`,
+    });
+  }
   return {
     query: state.query,
     count: list.length,
@@ -597,21 +733,68 @@ export function openProduct(id, who = "agent") {
   return { id, name: findProduct(id).name, price: findProduct(id).price, detail: findProduct(id).detail };
 }
 
+function invalidatePreparationIfNeeded(who, wasPrepared) {
+  const hadPrepare = wasPrepared || hasEventVerb("prepared");
+  state.prepared = false;
+  if (hadPrepare) {
+    retractEventsByVerb("prepared");
+    logEvent({
+      who: who === "shop" ? "you" : who,
+      verb: "invalidated",
+      detail: "Preparation invalidated.",
+    });
+  }
+  renderOrderReview();
+  updatePlaceButton();
+}
+
+function leaveCheckoutIfBagEmpty() {
+  if (state.cart.length) return false;
+  const onCheckout = state.view === "checkout"
+    || (els.checkout && !els.checkout.hidden)
+    || /checkout/i.test(location.hash || "");
+  clearCheckoutFields();
+  if (onCheckout || state.view === "checkout") {
+    showOnly("catalog");
+    renderCatalog();
+    if ((location.hash || "") !== "#/shop") location.hash = "/shop";
+    else history.replaceState(null, "", "#/shop");
+    announce("Bag is empty. Back to the shop.");
+  }
+  showCart();
+  return true;
+}
+
 export function addToCart(id, qty = 1, who = "agent") {
   const item = findProduct(id);
   if (!item) return `No product “${id}”.`;
   const count = Math.max(1, Number(qty) || 1);
+  const snap = snapshotCart(state.cart, state.promo);
+  const wasPrepared = state.prepared;
   const line = state.cart.find((row) => row.id === id);
   if (line) line.qty += count;
   else state.cart.push({ id, qty: count });
+  invalidatePreparationIfNeeded(who, wasPrepared);
   renderCart();
   showCart();
   announce(`Added ${item.name} to the bag.`);
+  if (who !== "shop") {
+    logEvent({
+      who,
+      verb: "added",
+      detail: `Added ${item.name} × ${count}.`,
+      snapshot: snap,
+    });
+  }
   return cartSnapshot(`Added ${item.name} × ${count}.`);
 }
 
 export function updateCart(id, qty, who = "agent") {
   const count = Number(qty);
+  const item = findProduct(id);
+  const snap = snapshotCart(state.cart, state.promo);
+  const wasPrepared = state.prepared;
+  const verb = count <= 0 ? "removed" : "updated";
   if (count <= 0) {
     state.cart = state.cart.filter((line) => line.id !== id);
   } else {
@@ -619,19 +802,38 @@ export function updateCart(id, qty, who = "agent") {
     if (!line) return `“${id}” is not in the bag.`;
     line.qty = count;
   }
+  invalidatePreparationIfNeeded(who, wasPrepared);
   renderCart();
+  leaveCheckoutIfBagEmpty();
+  if (who !== "shop") {
+    logEvent({
+      who,
+      verb,
+      detail: count <= 0
+        ? `Removed ${item?.name || id}.`
+        : `Set ${item?.name || id} to ${count}.`,
+      snapshot: snap,
+    });
+  }
   return cartSnapshot("Bag updated.");
 }
 
 export function applyPromo(code, who = "agent") {
+  const snap = snapshotCart(state.cart, state.promo);
+  const wasPrepared = state.prepared;
   state.promo = (code || "").trim();
   const promoField = document.querySelector("#promo");
   const cartPromo = document.querySelector("#cart-promo");
   if (promoField) promoField.value = state.promo;
   if (cartPromo && document.activeElement !== cartPromo) cartPromo.value = state.promo;
+  invalidatePreparationIfNeeded(who, wasPrepared);
   renderCart();
   const ok = state.promo.toUpperCase() === "HEARTH10";
-  return ok ? cartSnapshot("Promo HEARTH10 applied (10% off).") : cartSnapshot("That code is not valid. Try HEARTH10.");
+  const message = ok ? "Promo HEARTH10 applied (10% off)." : "That code is not valid. Try HEARTH10.";
+  if (who !== "shop") {
+    logEvent({ who, verb: "applied promo", detail: message, snapshot: snap });
+  }
+  return ok ? cartSnapshot(message) : cartSnapshot(message);
 }
 
 export function getCart() {
@@ -660,15 +862,15 @@ export function startCheckout(who = "agent") {
     showLogin();
     announce("Sign in to check out.");
     return {
-      message: "Checkout needs a signed-in account. Call use_saved_customer with an email from the vault (ada@hearth.shop or emmaxzchukwudi12@gmail.com) so the agent never handles a password. Or sign_in, then start_checkout again.",
-      savedCustomers: listPublicCustomers(),
+      signedIn: false,
+      message: "Checkout needs a signed-in account. Sign in on the page, or call sign_in with credentials the person provides.",
     };
   }
   setRoute("checkout");
-  announce("Opened checkout with saved details.");
+  announce("Opened checkout. Saved address stays hidden until you use or reveal it.");
   return {
-    ...cartSnapshot("Checkout is open. Saved customer details were applied from the vault. Do not ask the person to retype name or address. Ask them to review, then place_order with confirm=true."),
-    savedProfile: publicCustomer(getSession().email),
+    ...cartSnapshot("Checkout is open. A saved shipping profile may be available. Street and phone are not on the page. The person must click Use saved details or Show saved address. Then prepare_order, then place_order with confirm=true."),
+    profileStatus: profileStatus(getSession().email),
   };
 }
 
@@ -679,43 +881,96 @@ export function fillCheckout(fields = {}, who = "agent") {
     if (typeof opened === "string" && opened.includes("signed-in")) return opened;
   }
   const session = getSession();
-  if (session && !fields.address) {
-    applyCustomerToForm(session.email);
-  }
-  fillForm(fields);
+  if (session) applyIdentityToForm(session.email);
+  fillForm({ name: fields.name, email: fields.email, promo: fields.promo });
   if (fields.promo) applyPromo(fields.promo, who);
   renderVaultBanner();
+  const ignored = Boolean(fields.address || fields.city || fields.postcode);
   return {
-    message: "Checkout fields updated from the vault and any extra fields you passed. Ask the person to review, then call place_order with confirm=true.",
-    savedProfile: session ? publicCustomer(session.email) : null,
+    message: ignored
+      ? "Name, email, and promo updated. Street, city, and postcode were ignored so they stay off the page. Ask the person to click Use saved details or Show saved address."
+      : "Checkout identity updated. Street and phone were not written to the page.",
+    profileStatus: session ? profileStatus(session.email) : profileStatus(),
   };
+}
+
+export function markUseSavedShipping(who = "you") {
+  const session = getSession();
+  if (!session) return { ok: false, message: "Sign in first." };
+  const vault = shippingFromVault(session.email);
+  if (!vault?.hasShipping) return { ok: false, message: "No saved shipping profile.", profileStatus: profileStatus(session.email) };
+  applyIdentityToForm(session.email);
+  if (vault.promo) applyPromo(vault.promo, who === "you" ? "shop" : who);
+  state.useSavedShipping = true;
+  renderVaultBanner();
+  if (who !== "shop") {
+    logEvent({ who, verb: "chose saved shipping", detail: "Will use saved shipping at place time. Address stays hidden." });
+  }
+  announce("Saved shipping will be used. Address is not shown on the page.");
+  return {
+    ok: true,
+    message: "Saved shipping marked for use at place time. Street and phone were not written to the page.",
+    profileStatus: profileStatus(session.email),
+  };
+}
+
+export function revealSavedShipping(who = "you") {
+  const session = getSession();
+  if (!session) return { ok: false, message: "Sign in first." };
+  if (who !== "you") {
+    return {
+      ok: false,
+      message: "Only the person can reveal the saved address on the page. Ask them to click Show saved address.",
+      profileStatus: profileStatus(session.email),
+    };
+  }
+  const revealed = revealShippingToForm(session.email);
+  if (!revealed.ok) return { ...revealed, profileStatus: profileStatus(session.email) };
+  state.shippingRevealed = true;
+  state.useSavedShipping = true;
+  applyIdentityToForm(session.email);
+  renderVaultBanner();
+  logEvent({ who, verb: "revealed address", detail: "You chose to show the saved address on the form." });
+  announce("Saved address is visible so you can edit it.");
+  return { ok: true, message: "Saved address is visible on the form.", profileStatus: profileStatus(session.email) };
 }
 
 export function applySavedProfile(email, who = "agent") {
   const session = getSession();
   const target = (email || session?.email || "").trim().toLowerCase();
   if (!target) {
-    return { ok: false, message: "Pass an email, or sign in, then apply the saved profile." };
+    return { ok: false, message: "Pass an email, or sign in, then apply the saved profile.", profileStatus: profileStatus() };
   }
-  const applied = applyCustomerToForm(target);
-  if (applied.ok && applied.fields.promo) applyPromo(applied.fields.promo, who);
+  if (who === "you") return markUseSavedShipping("you");
+  const applied = applyIdentityToForm(target);
+  if (applied.ok && applied.promo) applyPromo(applied.promo, who);
+  if (applied.ok && applied.hasShipping) state.useSavedShipping = true;
   renderVaultBanner();
-  announce(applied.ok ? `Applied saved details for ${applied.customer.name}.` : applied.message);
-  return applied;
+  announce(applied.ok ? "Saved shipping marked for use. Address stays hidden." : applied.message);
+  if (who !== "shop") {
+    logEvent({
+      who,
+      verb: "applied profile",
+      detail: applied.ok ? "Saved shipping marked for use. Address not written to the page." : applied.message,
+    });
+  }
+  return {
+    ok: applied.ok,
+    message: applied.ok
+      ? "Saved shipping will be used at place time. Street, phone, and likes were not written to the page or returned to the agent."
+      : applied.message,
+    profileStatus: profileStatus(target),
+  };
 }
 
 export function useSavedCustomer(email, who = "agent") {
   const target = String(email || "").trim().toLowerCase();
   if (!target) {
-    return { ok: false, message: "Pass the customer email stored in the vault.", savedCustomers: listPublicCustomers() };
+    return { ok: false, signedIn: false, message: "Pass the customer email. Do not expect a list of accounts." };
   }
-  const profile = publicCustomer(target);
-  if (!profile) {
-    return {
-      ok: false,
-      message: `No vault record for ${target}. Saved customers: ${listPublicCustomers().map((row) => row.email).join(", ")}.`,
-      savedCustomers: listPublicCustomers(),
-    };
+  const status = profileStatus(target);
+  if (!status.available) {
+    return { ok: false, message: "No vault record for that email." };
   }
   const password = vaultPassword(target);
   if (!password) {
@@ -723,16 +978,18 @@ export function useSavedCustomer(email, who = "agent") {
   }
   const result = authSignIn({ email: target, password });
   if (!result.ok) return { ok: false, message: result.message, passwordReturned: false };
-  announce(`Signed in from the vault as ${profile.name}.`);
+  const first = status.firstName || target;
+  announce(`Signed in from the vault as ${first}.`);
   afterAuthSuccess(who);
-  const applied = applyCustomerToForm(target);
-  if (applied.ok && applied.fields.promo) applyPromo(applied.fields.promo, who);
+  const applied = applyIdentityToForm(target);
+  if (applied.ok && applied.promo) applyPromo(applied.promo, who);
+  if (applied.ok && applied.hasShipping) state.useSavedShipping = true;
   renderVaultBanner();
   return {
     ok: true,
-    message: `Signed in as ${profile.name} using a vault-held secret. The password was not returned to the agent (Infisical Agent Proxy pattern).`,
+    message: `Signed in as ${first} using a vault-held secret. The password was not returned to the agent. Street and phone were not written to the page.`,
     account: publicAccount(),
-    customer: profile,
+    profileStatus: profileStatus(target),
     applied: applied.ok,
     passwordReturned: false,
   };
@@ -740,22 +997,18 @@ export function useSavedCustomer(email, who = "agent") {
 
 export function getSavedCustomer(email) {
   const session = getSession();
-  const target = (email || session?.email || "").trim().toLowerCase();
-  if (!target) {
-    return {
-      signedIn: false,
-      savedCustomers: listPublicCustomers(),
-      hint: "Call use_saved_customer with one of these emails. Do not ask the person to type their address.",
-    };
+  if (!session) {
+    return { signedIn: false, hint: "Sign in on the page, or call sign_in with credentials the person provides." };
   }
-  const customer = publicCustomer(target);
-  if (!customer) {
-    return { found: false, email: target, savedCustomers: listPublicCustomers() };
+  const requested = String(email || "").trim().toLowerCase();
+  if (requested && requested !== session.email) {
+    return { ok: false, message: "Signed-in session only. Other customer profiles are not listed." };
   }
+  const status = profileStatus(session.email);
   return {
-    found: true,
-    customer,
-    hint: "Call apply_saved_profile to put this on checkout. Never ask the customer to re-enter these fields.",
+    found: status.available,
+    profileStatus: status,
+    hint: "Call apply_saved_profile to mark saved shipping for use. Street, phone, and likes are not written to the page or returned to the agent.",
   };
 }
 
@@ -778,35 +1031,51 @@ export function saveCustomerProfile(fields = {}) {
       category: fields.category,
     },
   });
-  if (fields.address || fields.city || fields.postcode || fields.name) {
-    applyCustomerToForm(email);
-    if (fields.promo) applyPromo(fields.promo, "agent");
-  }
+  if (fields.name || fields.email) applyIdentityToForm(email);
+  if (fields.promo) applyPromo(fields.promo, "agent");
   renderVaultBanner();
-  announce(`Saved ${saved.name} to the customer vault.`);
-  return { ok: true, message: "Customer saved in this browser vault. Password is stored but not returned.", customer: saved };
+  announce(`Saved ${saved?.name || email} to the customer vault.`);
+  return {
+    ok: true,
+    message: "Customer saved in this browser vault. Password, street, phone, and likes are stored but not returned to the agent.",
+    profileStatus: profileStatus(email),
+  };
 }
 
 export function placeOrder(fields = {}, confirm = false, who = "agent") {
   if (!getSession()) {
     state.afterLogin = "checkout";
     showLogin();
-    return "Sign in before placing an order. Demo: ada@hearth.shop / hearth.";
+    return "Sign in before placing an order.";
   }
   if (!state.cart.length) return "The bag is empty.";
   if (!confirm) {
-    return "This will place an order. Call again with confirm=true after the person agrees. Demo shop — no real payment is taken.";
+    return "This will place an order. Call prepare_order first if you have not, then call again with confirm=true after the person agrees. Demo shop — no real payment is taken.";
+  }
+  if (!state.prepared) {
+    return {
+      success: false,
+      error: "Order is not prepared. Call prepare_order first (or the person clicks Review order), then place_order with confirm=true.",
+    };
   }
   const session = getSession();
-  if (session && !fields.address) applyCustomerToForm(session.email);
-  fillForm(fields);
-  let data = { ...formData(), ...fields };
-  if ((!data.name || !data.email || !data.address) && session) {
-    applyCustomerToForm(session.email);
-    data = { ...formData(), ...fields };
+  if (session && !fields.address) {
+    applyIdentityToForm(session.email);
+    const vault = shippingFromVault(session.email);
+    if (vault?.hasShipping) state.useSavedShipping = true;
+  }
+  fillForm({ name: fields.name, email: fields.email, promo: fields.promo });
+  const typed = { ...fields };
+  if (!typed.address) delete typed.address;
+  if (!typed.city) delete typed.city;
+  if (!typed.postcode) delete typed.postcode;
+  let data = { ...checkoutData(), ...typed };
+  if (!data.address && session) {
+    const vault = shippingFromVault(session.email);
+    if (vault?.hasShipping) data = { ...vault, promo: typed.promo || data.promo || vault.promo, ...typed };
   }
   if (!data.name || !data.email || !data.address) {
-    return "Name, email, and address are required. Call apply_saved_profile first if they are already in the vault.";
+    return "Name, email, and a shipping profile are required. Ask the person to click Use saved details, or type an address.";
   }
   const snapshot = cartSnapshot("Order placed.");
   const id = `HR-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -823,27 +1092,28 @@ export function placeOrder(fields = {}, confirm = false, who = "agent") {
   recordCustomerOrder(data.email, state.lastOrder);
   state.cart = [];
   state.promo = "";
+  state.prepared = false;
   renderCart();
   setRoute("thanks");
   document.querySelector("#thanks-copy").textContent =
     `Order ${id} for ${data.name}. ${money(snapshot.total)} — this is a demo, nothing was charged.`;
   announce(`Order ${id} placed. Details saved to the customer vault.`);
-  return state.lastOrder;
+  logEvent({ who, verb: "placed", detail: `Order ${id} placed.` });
+  return { id, message: snapshot.message, lines: snapshot.lines, subtotal: snapshot.subtotal, discount: snapshot.discount, total: snapshot.total, promo: snapshot.promo, customer: data.name };
 }
 
 export function getAccount() {
   const account = publicAccount();
   if (!account.signedIn) {
     return {
-      ...account,
-      savedCustomers: listPublicCustomers(),
-      hint: "Call use_saved_customer with a vault email to sign in without asking for a password.",
+      signedIn: false,
+      hint: "Sign in on the page, or call sign_in with credentials the person provides.",
     };
   }
   return {
     ...account,
-    savedProfile: publicCustomer(account.email),
-    hint: "Call apply_saved_profile instead of asking the customer to type their address.",
+    profileStatus: profileStatus(account.email),
+    hint: "A shipping profile may be on file. Call apply_saved_profile to mark it for use. Street and phone stay off the page until the person clicks Show saved address.",
   };
 }
 
@@ -860,7 +1130,7 @@ export function signIn(fields, who = "agent") {
   });
   announce(result.message);
   afterAuthSuccess(who);
-  return { ...result, savedProfile: publicCustomer(fields.email), passwordReturned: false };
+  return { ...result, profileStatus: profileStatus(fields.email), passwordReturned: false };
 }
 
 export function signUp(fields, who = "agent") {
@@ -876,7 +1146,7 @@ export function signUp(fields, who = "agent") {
   });
   announce(result.message);
   afterAuthSuccess(who);
-  return { ...result, savedProfile: publicCustomer(fields.email) };
+  return { ...result, profileStatus: profileStatus(fields.email) };
 }
 
 export function signOut(who = "agent") {
@@ -889,35 +1159,329 @@ export function signOut(who = "agent") {
 
 export function runGiftDemo() {
   useSavedCustomer("ada@hearth.shop", "agent");
-  addToCart("bowl", 1, "agent");
-  applyPromo("HEARTH10", "agent");
-  const checkout = startCheckout("agent");
-  applySavedProfile("ada@hearth.shop", "agent");
+  const proposal = setProposal({
+    title: "Serving bowl vs. mug",
+    reason: "Both work as a host gift. Bowl is better for a cook; mug is cheaper and lighter to ship.",
+    options: [
+      {
+        id: "bowl",
+        label: "Stone serving bowl £32→£28.80 with HEARTH10",
+        tradeoff: "Better for a cook. Heavier. Higher perceived value.",
+        suggestedPromo: "HEARTH10",
+      },
+      {
+        id: "mug",
+        label: "Everyday mug",
+        tradeoff: "Cheaper, lighter delivery, everyday use.",
+      },
+    ],
+    pickId: "bowl",
+  });
+  logEvent({
+    who: "agent",
+    verb: "proposed",
+    detail: "Serving bowl vs. mug — waiting for your approval.",
+  });
   return {
     success: true,
-    message: "Ada is signed in from the vault (password not returned). Serving bowl is in the bag. HEARTH10 and her saved London address are on checkout. Due £28.80. Do not place the order until the person confirms.",
-    new_state: getShopState(),
-    checkout,
+    message: "Ada is signed in from the vault (password not returned). Two gift options are on the proposal card. Nothing was added to the bag and checkout was not opened. Approve a pick, then prepare_order, then place_order with confirm=true.",
+    proposal,
+    profileStatus: profileStatus("ada@hearth.shop"),
+    next: "Human approves → prepare_order → place_order confirm=true.",
   };
 }
 
 export function getShopState() {
   const account = getAccount();
-  return {
+  const proposal = getProposal();
+  const out = {
     view: state.view,
     query: state.query,
     category: state.category,
     maxPrice: state.maxPrice,
     cartCount: state.cart.reduce((n, line) => n + line.qty, 0),
     total: cartTotal().total,
+    prepared: Boolean(state.prepared),
     lastOrder: state.lastOrder?.id || null,
     catalogSize: products.length,
     account,
-    savedProfile: account.savedProfile || null,
-    hint: "Pull saved customer data with get_saved_customer or apply_saved_profile. Do not ask the person to retype name, email, or address. Sign in with use_saved_customer so the password never leaves the vault.",
+    proposal: proposal
+      ? { title: proposal.title, pickId: proposal.pickId, optionIds: (proposal.options || []).map((row) => row.id) }
+      : null,
+    activity: getActivity().slice(-6).map((row) => ({ who: row.who, verb: row.verb, detail: row.detail })),
   };
+  if (!account.signedIn) {
+    out.hint = account.hint;
+    return out;
+  }
+  out.profileStatus = account.profileStatus || profileStatus(account.email);
+  out.hint = "If a shipping profile is available, call apply_saved_profile to mark it for use. Street and phone stay off the page until the person clicks Show saved address.";
+  return out;
 }
 
 export function listProducts() {
   return products.map(({ id, name, price, category, blurb }) => ({ id, name, price, category, blurb }));
+}
+
+function resolveProduct(token) {
+  const key = String(token || "").trim().toLowerCase();
+  if (!key) return null;
+  return findProduct(key) || products.find((item) => item.name.toLowerCase().includes(key) || item.id === key) || null;
+}
+
+function tokensFrom(value) {
+  if (Array.isArray(value)) return value;
+  if (value == null || value === "") return [];
+  return String(value).split(/[,|]/).map((part) => part.trim()).filter(Boolean);
+}
+
+export function restoreCartFromSnapshot(snapshot, who = "you") {
+  if (!snapshot) return { ok: false, message: "No snapshot to restore." };
+  const wasPrepared = state.prepared;
+  state.cart = (snapshot.cart || []).map((line) => ({ id: line.id, qty: line.qty }));
+  state.promo = snapshot.promo || "";
+  invalidatePreparationIfNeeded(who, wasPrepared);
+  renderCart();
+  leaveCheckoutIfBagEmpty();
+  announce(state.cart.length ? "Cart restored." : "Cart restored. Bag is empty.");
+  return getCart();
+}
+
+export function applyProposalPick(optionId, opts = {}) {
+  const source = opts.source === "ui" ? "ui" : "tool";
+  const who = source === "ui" ? "you" : "agent";
+  if (source === "ui" && !opts.event?.isTrusted) {
+    return { ok: false, message: "Approval requires an explicit trusted click." };
+  }
+  const proposal = getProposal();
+  if (!proposal) return { ok: false, message: "No proposal waiting." };
+  const option = (proposal.options || []).find((row) => row.id === optionId)
+    || (proposal.options || []).find((row) => row.id === proposal.pickId);
+  if (!option) return { ok: false, message: "That option is not on the proposal." };
+  const productId = option.productId || option.id;
+  const snap = snapshotCart(state.cart, state.promo);
+  clearProposal();
+  logEvent({
+    who,
+    verb: "approved",
+    detail: `${who === "agent" ? "Agent" : "You"} approved ${option.label}.`,
+    snapshot: snap,
+    fromProposal: true,
+  });
+  const added = addToCart(productId, 1, "shop");
+  const promo = option.suggestedPromo || option.promo;
+  if (promo) applyPromo(promo, "shop");
+  return { ok: true, message: `Approved ${option.label}. Added to the bag.`, added };
+}
+
+export function approveProposal(optionId) {
+  const proposal = getProposal();
+  const id = optionId || proposal?.pickId;
+  return applyProposalPick(id, { source: "tool" });
+}
+
+export function undoLastAction(who = "agent") {
+  const result = undoLast(who);
+  if (!result.ok) return result;
+  restoreCartFromSnapshot(result.snapshot, who);
+  return { ok: true, message: `Reverted: ${result.label}.`, cart: getCart() };
+}
+
+function cartPromoUnchanged(before) {
+  const sameCart = JSON.stringify(before.cart || []) === JSON.stringify(state.cart);
+  const samePromo = (before.promo || "") === (state.promo || "");
+  return sameCart && samePromo;
+}
+
+export function recommendGift({ occasion = "", budget, recipient = "" } = {}, who = "agent") {
+  const before = snapshotCart(state.cart, state.promo);
+  try {
+    const cap = Number(budget) > 0 ? Number(budget) : 40;
+    const hay = `${occasion} ${recipient}`.toLowerCase();
+    const pool = products.filter((item) => item.price <= cap);
+    const scored = pool.map((item) => {
+      let score = 0;
+      if (/cook|kitchen|chef/.test(hay) && ["bowl", "skillet", "board"].includes(item.id)) score += 3;
+      if (/host|dinner|house|gift/.test(hay) && ["bowl", "napkins", "candles", "mug"].includes(item.id)) score += 2;
+      if (/everyday|mug|coffee|tea/.test(hay) && item.id === "mug") score += 3;
+      if (item.price <= 40) score += 1;
+      return { item, score, notes: productNotes[item.id] };
+    }).sort((a, b) => b.score - a.score || a.item.price - b.item.price);
+
+    let picks = scored.slice(0, 3);
+    if (picks.length < 2) {
+      picks = ["bowl", "mug"].map((id) => {
+        const item = findProduct(id);
+        return { item, score: 1, notes: productNotes[id] };
+      }).filter((row) => row.item);
+    }
+
+    const title = hay.trim()
+      ? `Gift options${recipient ? ` for ${recipient}` : ""}`
+      : "Serving bowl vs. mug";
+    const reason = /cook/.test(hay)
+      ? "Both work as a host gift. A bowl is better for a cook; a mug is cheaper and lighter to ship."
+      : "Here are two or three options with trade-offs. Nothing was added to the bag.";
+
+    const proposal = setProposal({
+      title,
+      reason,
+      options: picks.map((row, index) => ({
+        id: row.item.id,
+        label: `${row.item.name} ${money(row.item.price)}${index === 0 && row.item.id === "bowl" ? " → £28.80 with HEARTH10" : ""}`,
+        tradeoff: `${row.notes?.forWhom ? `For ${row.notes.forWhom}. ` : ""}${row.notes?.use || row.item.blurb}. ${row.notes?.ship || ""}`.trim(),
+        suggestedPromo: row.item.id === "bowl" ? "HEARTH10" : "",
+      })),
+      pickId: picks[0].item.id,
+    });
+    logEvent({
+      who,
+      verb: "proposed",
+      detail: `${title} — waiting for your approval.`,
+    });
+    return {
+      message: "Proposal set. Do not add to the cart, apply a promo, or call approve_proposal until the person approves on the page or in chat.",
+      added: false,
+      proposal,
+      options: proposal.options,
+    };
+  } finally {
+    if (!cartPromoUnchanged(before)) restoreCartFromSnapshot(before);
+  }
+}
+
+export function compareProducts({ ids, names } = {}) {
+  const tokens = [...tokensFrom(ids), ...tokensFrom(names)];
+  const items = [];
+  for (const token of tokens) {
+    const item = resolveProduct(token);
+    if (item && !items.some((row) => row.id === item.id)) items.push(item);
+  }
+  if (items.length < 2) {
+    return { ok: false, message: "Pass at least two product ids or names to compare." };
+  }
+  const compared = items.map((item) => {
+    const notes = productNotes[item.id] || {};
+    return {
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      use: notes.use || item.blurb,
+      forWhom: notes.forWhom || "anyone",
+      weight: notes.weight || "medium",
+      delivery: notes.ship || "Standard",
+    };
+  });
+  const cheapest = [...compared].sort((a, b) => a.price - b.price)[0];
+  return {
+    compared,
+    takeaway: `${cheapest.name} is the cheapest. Heavier pieces cost more to ship and suit a cook; lighter pieces are everyday gifts.`,
+  };
+}
+
+export function explainCart() {
+  const { sub, discount, total } = cartTotal();
+  const lines = state.cart.map((line) => {
+    const product = findProduct(line.id);
+    const notes = productNotes[line.id] || {};
+    return {
+      id: line.id,
+      name: product.name,
+      qty: line.qty,
+      why: notes.use ? `${notes.use}. Suits ${notes.forWhom}.` : product.blurb,
+      lineTotal: product.price * line.qty,
+    };
+  });
+  const missing = [];
+  if (!state.cart.length) missing.push("No items in the bag.");
+  if (state.promo.toUpperCase() !== "HEARTH10") missing.push("Promo HEARTH10 is not applied.");
+  if (!getSession()) missing.push("Not signed in.");
+  else if (!profileStatus(getSession().email).hasShipping) missing.push("No saved shipping profile — fill checkout on the page.");
+  if (!state.prepared) missing.push("Order not yet prepared — call prepare_order or click Review order.");
+  const narrative = lines.length
+    ? `${lines.map((line) => `${line.name} × ${line.qty}: ${line.why}`).join(" ")} Total ${money(total)}${state.promo ? ` with ${state.promo}` : ""}.`
+    : "The bag is empty.";
+  return {
+    lines,
+    subtotal: sub,
+    discount,
+    total,
+    promo: state.promo || "none",
+    prepared: Boolean(state.prepared),
+    missing,
+    narrative,
+  };
+}
+
+export function prepareOrder(who = "agent") {
+  if (!state.cart.length) return { ok: false, message: "The bag is empty." };
+  if (!getSession()) {
+    state.afterLogin = "checkout";
+    showLogin();
+    return { ok: false, message: "Sign in first (use_saved_customer). Then prepare_order." };
+  }
+  if (els.checkout?.hidden) {
+    const opened = startCheckout(who);
+    if (opened && typeof opened === "object" && String(opened.message || "").includes("signed-in")) return opened;
+  }
+  const session = getSession();
+  if (session) {
+    const applied = applyIdentityToForm(session.email);
+    if (applied.ok && applied.promo && state.promo.toUpperCase() !== "HEARTH10") applyPromo(applied.promo, who);
+    if (applied.hasShipping) state.useSavedShipping = true;
+  }
+  state.prepared = true;
+  renderOrderReview();
+  updatePlaceButton();
+  logEvent({ who, verb: "prepared", detail: "Order reviewed. Ready to place when you confirm." });
+  announce("Order reviewed. Place order is unlocked.");
+  return {
+    ok: true,
+    prepared: true,
+    message: "Order prepared. Review the confirmation on the page, then place_order with confirm=true.",
+    summary: explainCart(),
+    profileStatus: profileStatus(session.email),
+  };
+}
+
+function updatePlaceButton() {
+  if (els.placeOrder) els.placeOrder.disabled = !state.prepared;
+  if (els.placeHint) {
+    els.placeHint.textContent = state.prepared
+      ? "Reviewed. You can place the order."
+      : "Review the order before placing. The agent must call prepare_order first if it is placing for you.";
+  }
+}
+
+function renderOrderReview() {
+  if (!els.orderConfirm || !els.orderConfirmBody) return;
+  if (!state.prepared) {
+    els.orderConfirm.hidden = true;
+    els.orderConfirmBody.replaceChildren();
+    return;
+  }
+  const { sub, discount, total } = cartTotal();
+  const session = getSession();
+  const status = session ? profileStatus(session.email) : profileStatus();
+  const lines = state.cart.map((line) => {
+    const product = findProduct(line.id);
+    return `${product.name} × ${line.qty} — ${money(product.price * line.qty)}`;
+  });
+  els.orderConfirm.hidden = false;
+  els.orderConfirmBody.replaceChildren();
+  const list = document.createElement("ul");
+  for (const line of lines) {
+    const li = document.createElement("li");
+    li.textContent = line;
+    list.append(li);
+  }
+  const extras = document.createElement("p");
+  extras.textContent = [
+    state.promo.toUpperCase() === "HEARTH10" ? `Promo HEARTH10 (−${money(discount)})` : "No promo",
+    `Total ${money(total)}`,
+    status.hasShipping
+      ? (state.shippingRevealed ? "Saved address visible on the form." : "Saved shipping profile on file (hidden from this page).")
+      : "Fill shipping on the form.",
+  ].join(" · ");
+  els.orderConfirmBody.append(list, extras);
 }

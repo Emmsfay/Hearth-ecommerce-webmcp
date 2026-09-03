@@ -1,4 +1,5 @@
-import { bindUi, runGiftDemo } from "./app.js";
+import { applyProposalPick, bindUi, restoreCartFromSnapshot, runGiftDemo } from "./app.js";
+import { bindCollab } from "./collab.js";
 import { registerWebMcp } from "./webmcp.js";
 import { bindVoice } from "./voice.js";
 
@@ -7,6 +8,23 @@ try {
 } catch (error) {
   console.error(error);
 }
+
+try {
+  bindCollab({
+    onUndo(result) {
+      if (result?.ok) restoreCartFromSnapshot(result.snapshot, "you");
+    },
+    onApprove(proposal, event) {
+      applyProposalPick(proposal?.pickId, { source: "ui", event });
+    },
+    onChoose(id, event) {
+      applyProposalPick(id, { source: "ui", event });
+    },
+  });
+} catch (error) {
+  console.error(error);
+}
+
 bindVoice();
 
 const status = document.querySelector("#webmcp-status");

@@ -43,7 +43,7 @@ export function getSession() {
 
 export function publicAccount() {
   const session = getSession();
-  if (!session) return { signedIn: false, demo: "ada@hearth.shop / hearth" };
+  if (!session) return { signedIn: false };
   return { signedIn: true, name: session.name, email: session.email };
 }
 
@@ -72,7 +72,7 @@ export function signIn({ email, password }) {
   const cleanPassword = (password || "").trim();
   const user = readUsers().find((row) => row.email === cleanEmail && row.password === cleanPassword);
   if (!user) {
-    return { ok: false, message: "Email or password is wrong. Demo: ada@hearth.shop / hearth" };
+    return { ok: false, message: "Email or password is wrong." };
   }
   localStorage.setItem(SESSION_KEY, JSON.stringify({ name: user.name, email: user.email }));
   return { ok: true, message: `Signed in as ${user.name}.`, account: publicAccount() };

@@ -39,27 +39,27 @@ export async function registerWebMcp(onStatus) {
       title: document.title,
       href: location.href,
     }), { readOnly: true, idempotent: true }),
-    tool("get_shop_state", "See the current page, cart, signed-in account, saved customer profile, and last order. Call this first. If a saved profile exists, do not ask the person to retype name, email, or address.", emptySchema(), () => shop.getShopState(), { readOnly: true, idempotent: true }),
+    tool("get_shop_state", "See the current page, cart, whether someone is signed in, proposal, and last order. When signed out, account is only signedIn:false. Profile status is included only after sign-in. Never lists other customers.", emptySchema(), () => shop.getShopState(), { readOnly: true, idempotent: true }),
     tool("open_page", "Open a site page: home, shop, about, login, signup, or checkout.", {
       type: "object",
       properties: { page: { type: "string", enum: ["home", "shop", "about", "login", "signup", "checkout"] } },
       required: ["page"],
     }, ({ page }) => shop.openPage(page)),
-    tool("get_account", "See whether the person is signed in, plus their saved vault profile (name, shipping, likes). Prefer this over asking them to type details.", emptySchema(), () => shop.getAccount(), { readOnly: true, idempotent: true }),
-    tool("get_saved_customer", "Pull permanently saved customer data from the browser vault: name, shipping address, likes, promo, and recent orders. Never returns a password. Pass email, or omit it to use the signed-in account.", {
+    tool("get_account", "See whether the person is signed in. When signed out, returns only signedIn:false. When signed in, returns profileStatus — never street, city, postcode, phone, or likes.", emptySchema(), () => shop.getAccount(), { readOnly: true, idempotent: true }),
+    tool("get_saved_customer", "See profile status for the signed-in account only. When signed out, returns only signedIn:false. Never lists other customers.", {
       type: "object",
-      properties: { email: { type: "string", description: "Customer email. Optional if someone is already signed in." } },
+      properties: { email: { type: "string", description: "Ignored unless it matches the signed-in account." } },
     }, ({ email }) => shop.getSavedCustomer(email), { readOnly: true, idempotent: true }),
-    tool("use_saved_customer", "Infisical-style agent proxy: sign in as a vault customer and apply their saved checkout details. The password stays in the vault and is never returned to the agent. Prefer this over sign_in. Demo emails: ada@hearth.shop, emmaxzchukwudi12@gmail.com.", {
+    tool("use_saved_customer", "Sign in as a vault customer without returning the password. Street and phone stay in the vault. Requires the email the person provides. Prefer this over sign_in.", {
       type: "object",
       properties: { email: { type: "string" } },
       required: ["email"],
     }, ({ email }) => shop.useSavedCustomer(email, "agent")),
-    tool("apply_saved_profile", "Fill checkout from the vault so the customer does not retype name or address. Uses the signed-in account unless email is passed.", {
+    tool("apply_saved_profile", "Mark the saved shipping profile for use at place time. Does not write street or phone onto the page. Returns profileStatus only.", {
       type: "object",
       properties: { email: { type: "string" } },
     }, ({ email }) => shop.applySavedProfile(email, "agent")),
-    tool("save_customer_profile", "Permanently save name, shipping, likes, and promo in the customer vault for later agent use. Password is stored in the vault only and is never returned.", {
+    tool("save_customer_profile", "Save name, shipping, likes, and promo in the customer vault. Password and address are stored in the vault only and are never returned. Tool output is profileStatus.", {
       type: "object",
       properties: {
         name: { type: "string" },
@@ -74,7 +74,7 @@ export async function registerWebMcp(onStatus) {
         likes: { type: "array", items: { type: "string" } },
       },
     }, (fields) => shop.saveCustomerProfile(fields)),
-    tool("sign_in", "Sign in on this browser. Prefer use_saved_customer so the agent never holds a password. Demo: ada@hearth.shop / hearth.", {
+    tool("sign_in", "Sign in on this browser with credentials the person provides. Prefer use_saved_customer so the agent never holds a password.", {
       type: "object",
       properties: { email: { type: "string" }, password: { type: "string" } },
       required: ["email", "password"],
@@ -119,8 +119,30 @@ export async function registerWebMcp(onStatus) {
       properties: { code: { type: "string" } },
       required: ["code"],
     }, ({ code }) => shop.applyPromo(code, "agent")),
-    tool("start_checkout", "Open checkout. Applies the saved vault profile automatically. Needs items in the bag and a signed-in account (use_saved_customer if not signed in).", emptySchema(), () => shop.startCheckout("agent")),
-    tool("fill_checkout", "Fill shipping fields. If you omit address, the vault profile is applied first. Prefer apply_saved_profile instead of asking the customer to dictate an address.", {
+    tool("recommend_gift", "Propose 2–3 gift options with trade-offs and set a proposal card. Read-only: do not add to cart, do not apply promo, do not call approve_proposal / add_to_cart / apply_promo until the human has actually approved on the page or in chat. STOP and wait.", {
+      type: "object",
+      properties: {
+        occasion: { type: "string", description: "e.g. host gift, birthday, kitchen" },
+        budget: { type: "number", description: "Maximum price in GBP" },
+        recipient: { type: "string", description: "Who it is for, e.g. a cook" },
+      },
+    }, (input) => shop.recommendGift(input, "agent"), { readOnly: true, idempotent: true }),
+    tool("compare_products", "Side-by-side trade-offs for two or more products: price, use, delivery/weight, who it is for.", {
+      type: "object",
+      properties: {
+        ids: { description: "Product ids such as bowl, mug", anyOf: [{ type: "array", items: { type: "string" } }, { type: "string" }] },
+        names: { description: "Product names", anyOf: [{ type: "array", items: { type: "string" } }, { type: "string" }] },
+      },
+    }, (input) => shop.compareProducts(input), { readOnly: true, idempotent: true }),
+    tool("explain_cart", "Human-readable why each line is in the bag, totals, promo, and what is missing before checkout.", emptySchema(), () => shop.explainCart(), { readOnly: true, idempotent: true }),
+    tool("prepare_order", "Build a confirmation summary and mark the order prepared. Does not submit. Required before place_order.", emptySchema(), () => shop.prepareOrder("agent")),
+    tool("approve_proposal", "Apply a proposal option as the agent. Logs as Agent approved — never You. Prefer the on-page Approve / Choose buttons for a human You approved action. Do not call this from recommend_gift.", {
+      type: "object",
+      properties: { optionId: { type: "string", description: "Option id. Defaults to the agent’s pick." } },
+    }, ({ optionId }) => shop.approveProposal(optionId)),
+    tool("undo_last", "Undo the last cart mutation (add, remove, qty, promo) from the shared snapshot stack.", emptySchema(), () => shop.undoLastAction("agent")),
+    tool("start_checkout", "Open checkout. Needs items in the bag and a signed-in account. Does not write or return the saved address. Ask the person to click Use saved details.", emptySchema(), () => shop.startCheckout("agent")),
+    tool("fill_checkout", "Update name, email, or promo on checkout. Street, city, and postcode arguments are ignored so they stay off the page. Output never includes street or phone.", {
       type: "object",
       properties: {
         name: { type: "string" },
@@ -131,7 +153,7 @@ export async function registerWebMcp(onStatus) {
         promo: { type: "string" },
       },
     }, (fields) => shop.fillCheckout(fields, "agent")),
-    tool("place_order", "Place a demo order. Must set confirm=true after the person agrees. No real payment is taken.", {
+    tool("place_order", "Place a demo order. Requires a prior prepare_order (or the person clicking Review order) AND confirm=true. No real payment is taken.", {
       type: "object",
       properties: {
         confirm: { type: "boolean" },
@@ -143,8 +165,8 @@ export async function registerWebMcp(onStatus) {
       },
       required: ["confirm"],
     }, ({ confirm, ...fields }) => shop.placeOrder(fields, confirm, "agent"), { destructive: true }),
-    tool("run_gift_demo", "Sign Ada in from the vault (no password returned), add the £32 serving bowl, apply HEARTH10 (£28.80), and open checkout with her saved London address. Does not place the order.", emptySchema(), () => shop.runGiftDemo()),
-    tool("get_customer_memory", "Read voice-session notes plus the signed-in vault profile. Prefer get_saved_customer for permanent name and address.", emptySchema(), () => getVoiceMemory(), { readOnly: true, idempotent: true }),
+    tool("run_gift_demo", "Sign Ada in from the vault (no password returned) and set a bowl-vs-mug proposal. Does not add to the cart or open checkout. Wait for human approval, then prepare_order, then place_order with confirm=true.", emptySchema(), () => shop.runGiftDemo()),
+    tool("get_customer_memory", "Read voice-session notes plus profileStatus for the signed-in vault. Never returns street, phone, or likes from the vault.", emptySchema(), () => getVoiceMemory(), { readOnly: true, idempotent: true }),
     tool("remember_customer_note", "Store a short note about the customer in this browser's voice memory.", {
       type: "object",
       properties: { note: { type: "string" } },
