@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Olive oil cruet">
-  <rect width="400" height="400" fill="#eee8dc"/>
-  <path d="M176 120h48v28h-48z" fill="#6b5340"/>
-  <path d="M168 148h64c8 16 20 48 20 88 0 52-24 84-52 84s-52-32-52-84c0-40 12-72 20-88z" fill="#7a8f3d"/>
-  <path d="M188 168h24c6 14 14 40 14 68 0 20-6 36-14 36s-14-16-14-36c0-28 8-54 14-68z" fill="#c4c86a" opacity="0.45"/>
-  <ellipse cx="200" cy="148" rx="32" ry="8" fill="#d8c8b0"/>
-</svg>

@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Linen apron">
-  <rect width="400" height="400" fill="#ebe6dc"/>
-  <path d="M150 70c0 20 8 36 22 46" fill="none" stroke="#8a7358" stroke-width="8" stroke-linecap="round"/>
-  <path d="M250 70c0 20-8 36-22 46" fill="none" stroke="#8a7358" stroke-width="8" stroke-linecap="round"/>
-  <path d="M128 120h144l12 200H116z" fill="#c4b089"/>
-  <rect x="168" y="200" width="64" height="54" rx="6" fill="#b89a6e"/>
-</svg>

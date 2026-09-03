@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Reed diffuser">
-  <rect width="400" height="400" fill="#ebe6dc"/>
-  <path d="M176 200h48l10 120h-68z" fill="#8a7358"/>
-  <path d="M186 70l6 130" stroke="#6b5340" stroke-width="4"/>
-  <path d="M200 58l2 142" stroke="#6b5340" stroke-width="4"/>
-  <path d="M214 74l-6 126" stroke="#6b5340" stroke-width="4"/>
-  <path d="M226 88l-12 112" stroke="#6b5340" stroke-width="4"/>
-  <ellipse cx="200" cy="200" rx="24" ry="8" fill="#c4b089"/>
-</svg>

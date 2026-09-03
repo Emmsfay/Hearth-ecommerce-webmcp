@@ -106,7 +106,19 @@ export function bindUi() {
     searchProducts(els.search.value, "you");
   });
   document.querySelectorAll("[data-category]").forEach((button) => {
-    button.addEventListener("click", () => filterProducts({ category: button.dataset.category }, "you"));
+    button.addEventListener("click", () => {
+      if (button.dataset.category === "all") {
+        state.query = "";
+        if (els.search) els.search.value = "";
+      }
+      filterProducts({ category: button.dataset.category }, "you");
+    });
+  });
+  document.querySelectorAll('a[href="#/shop"]').forEach((link) => {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      clearShopFilters();
+    });
   });
   document.querySelectorAll("[data-search]").forEach((button) => {
     button.addEventListener("click", () => searchProducts(button.dataset.search, "you"));
@@ -342,14 +354,42 @@ function prefillCheckoutFromAccount() {
   renderVaultBanner();
 }
 
+const categorySearch = {
+  table: "table dine serve drink linen",
+  kitchen: "kitchen cook cookware prep",
+  care: "care home decor scent wash rest",
+};
+
+function productHaystack(item) {
+  const label = categoryLabel[item.category] || item.category;
+  const extra = categorySearch[item.category] || "";
+  const tags = Array.isArray(item.tags) ? item.tags.join(" ") : "";
+  return [item.id, item.name, item.blurb, item.detail, item.category, label, extra, tags]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
 function visibleProducts() {
+  const tokens = state.query.toLowerCase().split(/\s+/).filter(Boolean);
   return products.filter((item) => {
-    const q = state.query.toLowerCase();
-    const matchesQuery = !q || item.name.toLowerCase().includes(q) || item.blurb.toLowerCase().includes(q) || item.category.includes(q);
+    const hay = productHaystack(item);
+    const matchesQuery = !tokens.length || tokens.every((token) => hay.includes(token));
     const matchesCat = state.category === "all" || item.category === state.category;
     const matchesPrice = !state.maxPrice || item.price <= state.maxPrice;
     return matchesQuery && matchesCat && matchesPrice;
   });
+}
+
+function clearShopFilters() {
+  state.query = "";
+  state.category = "all";
+  state.maxPrice = 0;
+  if (els.search) els.search.value = "";
+  const price = document.querySelector("#max-price");
+  if (price) price.value = "0";
+  showCatalog();
+  announce("Showing all products.");
 }
 
 function cartTotal() {
@@ -485,6 +525,12 @@ export function resetDemoSession() {
   if (cartPromo) cartPromo.value = "";
   const thanksCopy = document.querySelector("#thanks-copy");
   if (thanksCopy) thanksCopy.textContent = "";
+  state.query = "";
+  state.category = "all";
+  state.maxPrice = 0;
+  if (els.search) els.search.value = "";
+  const price = document.querySelector("#max-price");
+  if (price) price.value = "0";
   resetCollab();
   renderCart();
   hideCart();
@@ -602,9 +648,18 @@ function renderCatalog() {
   const count = document.querySelector("#shop-count");
   if (count) count.textContent = `${list.length} good${list.length === 1 ? "" : "s"}`;
   if (!list.length) {
-    const empty = document.createElement("p");
+    const empty = document.createElement("div");
     empty.className = "shop-empty";
-    empty.textContent = "No goods match that search. Clear the filters or try another word.";
+    const copy = document.createElement("p");
+    copy.textContent = state.query
+      ? `No goods match “${state.query}”. Try another word, or show the full shop.`
+      : "No goods match those filters. Show the full shop to start again.";
+    const clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "ghost";
+    clear.textContent = "Show all products";
+    clear.addEventListener("click", () => clearShopFilters());
+    empty.append(copy, clear);
     els.catalog.append(empty);
     document.querySelectorAll("[data-category]").forEach((button) => {
       button.classList.toggle("is-on", button.dataset.category === state.category);
