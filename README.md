@@ -14,7 +14,7 @@ This project is released under the **MIT License**. See [LICENSE](LICENSE).
 
 ## Run
 
-Docker maps the shop to port **5176** (not 8084).
+Docker maps the shop to port **5176**.
 
 ```bash
 cd ~/hearth
@@ -38,7 +38,7 @@ Site tools only appear in the **ChatGPT desktop** built-in browser.
 
 ## Privacy
 
-Account and vault tools return `profileStatus` only — for example “saved shipping profile available”. They never return street, city, postcode, phone, or likes. The checkout form on the page may still fill those fields for the human.
+Account and vault tools return `profileStatus` only for example “saved shipping profile available”. They never return street, city, postcode, phone, or likes. The checkout form on the page may still fill those fields for the human.
 
 **Reset demo session** clears cart, promo, activity, proposal, undo, and prepared/review state. It keeps the signed-in account and does not wipe the customer vault.
 
