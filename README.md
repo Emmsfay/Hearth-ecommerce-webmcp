@@ -1,11 +1,12 @@
 # Hearth
 
-A home-goods shop built for the [WebMCP Challenge](https://webmcp.devpost.com/). A person and ChatGPT shop on the **same live page**. The person clicks as usual. The agent uses **site tools** — it does not scrape buttons.
+A simple home-goods shop built for the [WebMCP Challenge](https://webmcp.devpost.com/). 
+A person and ChatGPT shop on the **same live page**, the person clicks as usual, the agent uses **site tools** and it does not scrape buttons.
 
 The collaboration rule is fixed:
 
 1. The agent **proposes**.
-2. You **approve**.
+2. User(you) **approves**.
 3. Someone **reviews** the order.
 4. Only then can it be **placed**, and only with `confirm: true`.
 
@@ -17,16 +18,16 @@ The collaboration rule is fixed:
 
 ## What this is
 
-Hearth is a static storefront: eight products (mug, napkins, skillet, board, bowl, candles, soap, throw), promo **HEARTH10** (10% off), a shared cart, and a checkout that never takes real payment.
+Hearth is a WebMCP host and a static storefront: eight products (mug, napkins, skillet, board, bowl, candles, soap, throw), promo **HEARTH10** (10% off), a shared cart, and a checkout that never takes real payment.
 
-It is also a WebMCP host. When the page is opened as the **only URL** in ChatGPT desktop (model **GPT-5.6 Sol or Terra**, not Luna), the address bar shows **Site tools**. Those tools read and write the same DOM, cart, and session the human sees.
+When the page is opened as the **only URL** in ChatGPT desktop (model **GPT-5.6 Sol or Terra**, not Luna), the address bar shows **Site tools**. Those tools read and write the same DOM, cart, and session the human sees.
 
 Human–agent work is visible:
 
 - A **proposal card** with trade-offs (for example serving bowl vs mug: cheaper, better for a cook, delivery impact).
 - An **activity timeline** (“Agent proposed”, “You approved”, “You invalidated”).
 - **Undo**, which restores the last cart snapshot and leaves checkout if the bag is empty.
-- **Reset demo session**, so a judge always starts from an empty cart and empty log.
+- **Reset demo session**, so a user starts from an empty cart and empty log.
 
 `recommend_gift` is proposal-only. It does not add to the cart or apply a promo. **You approved** is written only after a trusted click on the page.
 
@@ -189,20 +190,6 @@ Demo login on the **page** (not via unsigned tool lists): `ada@hearth.shop` / `h
 
 ---
 
-## Demo video (under 3 minutes)
-
-Film this path — not a list of tool calls. ChatGPT desktop, Sol or Terra, live URL only, **Site tools** visible.
-
-1. **Reset demo session** — empty cart, empty timeline.
-2. Agent calls `recommend_gift` (host gift for a cook). Bowl vs mug. Cart stays empty. “Agent proposed.”
-3. **You click Approve.** Bowl is added. “You approved.” HEARTH10 applies with that pick.
-4. `explain_cart` — reasons, promo, total, next step.
-5. `prepare_order` — review on the page; Place still gated.
-6. `place_order` with `confirm: false` — **blocked**.
-7. `place_order` with `confirm: true` — thanks screen.
-
----
-
 ## Privacy (tools vs page)
 
 | Surface | What it may see |
@@ -213,16 +200,3 @@ Film this path — not a list of tool calls. ChatGPT desktop, Sol or Terra, live
 | Reset demo session | Clears cart, promo, activity, proposal, undo, prepared state. Keeps the account and vault |
 
 ---
-
-## Catalog
-
-| Id | Product | Price | Category |
-| --- | --- | --- | --- |
-| `mug` | Stoneware mug | £28 | table |
-| `napkins` | Linen napkin set | £36 | table |
-| `skillet` | Cast iron skillet | £84 | kitchen |
-| `board` | Oak cutting board | £54 | kitchen |
-| `bowl` | Serving bowl | £32 → £28.80 with HEARTH10 | table |
-| `candles` | Beeswax tapers | £22 | care |
-| `soap` | Olive oil soap | £12 | care |
-| `throw` | Wool throw | £96 | care |
