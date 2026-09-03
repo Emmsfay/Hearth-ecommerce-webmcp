@@ -150,7 +150,7 @@ export function renderCollab() {
     if (!rows.length) {
       const empty = document.createElement("li");
       empty.className = "activity-empty";
-      empty.textContent = "Nothing yet. You shop. The agent proposes. You approve.";
+      empty.textContent = "Nothing yet.";
       list.append(empty);
     }
     for (const event of rows) {
