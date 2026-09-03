@@ -6,7 +6,7 @@
     <meta name="description" content="Hearth is a WebMCP shop. People browse as usual. Agents search, fill the cart, and start checkout on the same live page." />
     <title>Hearth, goods for the table</title>
     <link rel="icon" href="/favicon.svg?v=mark1" type="image/svg+xml" />
-    <link rel="stylesheet" href="/src/styles.css?v=voice2" />
+    <link rel="stylesheet" href="/src/styles.css?v=shop2" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
@@ -33,7 +33,7 @@
         </button>
         <form id="search-form" class="search" role="search">
           <label class="sr-only" for="search">Search</label>
-          <input id="search" type="search" placeholder="Search products, brands and categories" />
+          <input id="search" type="search" placeholder="Search kitchen, table, linen…" />
           <button type="submit">Search</button>
         </form>
         <div id="mast-actions" class="mast-actions">
@@ -75,21 +75,23 @@
           <div class="mega">
             <div>
               <p>Cookware</p>
-              <button type="button" data-search="skillet">Skillets</button>
               <button type="button" data-product="skillet">Cast iron skillet</button>
+              <button type="button" data-product="kettle">Stovetop kettle</button>
+              <button type="button" data-product="oil">Olive oil cruet</button>
               <button type="button" data-category="kitchen">All kitchen</button>
             </div>
             <div>
               <p>Prep</p>
-              <button type="button" data-search="board">Cutting boards</button>
               <button type="button" data-product="board">Oak cutting board</button>
-              <button type="button" data-search="oak">Oak goods</button>
+              <button type="button" data-product="apron">Linen apron</button>
+              <button type="button" data-product="salt">Salt cellar</button>
+              <button type="button" data-product="rest">Spoon rest</button>
             </div>
             <div>
-              <p>Brands</p>
-              <button type="button" data-category="kitchen">Hearth Kitchen</button>
-              <button type="button" data-search="cast iron">Cast iron</button>
-              <a href="#/about">Official Store</a>
+              <p>Shop</p>
+              <button type="button" data-search="oak">Oak goods</button>
+              <button type="button" data-search="linen">Linen</button>
+              <a href="#/shop">See all kitchen</a>
             </div>
           </div>
         </div>
@@ -101,22 +103,23 @@
           <div class="mega">
             <div>
               <p>Serve</p>
-              <button type="button" data-search="bowl">Serving bowls</button>
               <button type="button" data-product="bowl">Serving bowl</button>
+              <button type="button" data-product="pitcher">Stoneware pitcher</button>
+              <button type="button" data-product="tray">Oak serving tray</button>
               <button type="button" data-category="table">All table</button>
             </div>
             <div>
               <p>Drink &amp; linen</p>
-              <button type="button" data-search="mug">Mugs</button>
               <button type="button" data-product="mug">Stoneware mug</button>
-              <button type="button" data-search="linen">Linen</button>
+              <button type="button" data-product="tumblers">Glass tumbler set</button>
               <button type="button" data-product="napkins">Linen napkin set</button>
+              <button type="button" data-product="mats">Linen placemats</button>
             </div>
             <div>
-              <p>Brands</p>
-              <button type="button" data-category="table">Hearth Table</button>
+              <p>More</p>
+              <button type="button" data-product="vase">Bud vase</button>
               <button type="button" data-search="stoneware">Stoneware</button>
-              <a href="#/about">Official Store</a>
+              <a href="#/shop">See all table</a>
             </div>
           </div>
         </div>
@@ -127,23 +130,23 @@
           </button>
           <div class="mega">
             <div>
-              <p>Light</p>
-              <button type="button" data-search="candles">Candles</button>
+              <p>Light &amp; scent</p>
               <button type="button" data-product="candles">Beeswax tapers</button>
+              <button type="button" data-product="diffuser">Reed diffuser</button>
               <button type="button" data-category="care">All home &amp; care</button>
             </div>
             <div>
               <p>Wash &amp; rest</p>
-              <button type="button" data-search="soap">Soap</button>
               <button type="button" data-product="soap">Olive oil soap</button>
-              <button type="button" data-search="throw">Throws</button>
+              <button type="button" data-product="lotion">Hand lotion</button>
               <button type="button" data-product="throw">Wool throw</button>
+              <button type="button" data-product="basket">Woven basket</button>
             </div>
             <div>
-              <p>Brands</p>
-              <button type="button" data-category="care">Hearth Home</button>
+              <p>More</p>
+              <button type="button" data-product="hook">Oak coat hook</button>
               <button type="button" data-search="wool">Merino</button>
-              <a href="#/about">Official Store</a>
+              <a href="#/shop">See all home</a>
             </div>
           </div>
         </div>
@@ -217,7 +220,7 @@
 
       <section class="wrap rail">
         <div class="rail-head">
-          <h2>Flash picks-under £40</h2>
+          <h2>Flash picks — under £40</h2>
           <a href="#/shop">See all</a>
         </div>
         <div id="home-deals" class="catalog dense"></div>
@@ -274,9 +277,9 @@
       <div class="shop-intro-copy">
         <p class="crumb">Home / All products</p>
         <h1>All products</h1>
-        <p class="shop-lead">Eight pieces for the table and the kitchen. Filter here, or let the agent propose and you still approve what goes in the bag.</p>
+        <p class="shop-lead">Twenty-two pieces for the table, kitchen, and home. Filter here, or let the agent propose and you still approve what goes in the bag.</p>
       </div>
-      <p class="shop-count" id="shop-count">8 goods</p>
+      <p class="shop-count" id="shop-count">22 goods</p>
     </section>
 
     <nav class="filters wrap" aria-label="Categories" hidden>
@@ -572,6 +575,6 @@
         }
       });
     </script>
-    <script type="module" src="/src/main.js?v=collab3"></script>
+    <script type="module" src="/src/main.js?v=shop2"></script>
   </body>
 </html>

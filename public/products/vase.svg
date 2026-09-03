@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Bud vase">
+  <rect width="400" height="400" fill="#ece6dc"/>
+  <path d="M188 70c8 40 6 70-10 108 22 8 40 8 62 0-16-38-18-68-10-108" fill="#3d6b4f"/>
+  <circle cx="236" cy="92" r="10" fill="#c45c4a"/>
+  <path d="M176 178h48c8 20 14 48 14 78 0 36-16 58-38 58s-38-22-38-58c0-30 6-58 14-78z" fill="#8aa4ae"/>
+  <ellipse cx="200" cy="178" rx="24" ry="8" fill="#c5d2d8"/>
+</svg>

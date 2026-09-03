@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Stovetop kettle">
+  <rect width="400" height="400" fill="#e8eaee"/>
+  <ellipse cx="196" cy="300" rx="86" ry="14" fill="#cfd3da"/>
+  <path d="M118 168h156c8 20 14 48 14 80 0 40-20 62-92 62s-92-22-92-62c0-32 6-60 14-80z" fill="#6d727a"/>
+  <path d="M150 120c20-28 80-28 100 0" fill="none" stroke="#3d4046" stroke-width="12" stroke-linecap="round"/>
+  <path d="M274 188c28 8 48 24 48 48 0 22-16 36-40 42" fill="none" stroke="#3d4046" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="200" cy="168" r="10" fill="#2a2c30"/>
+</svg>

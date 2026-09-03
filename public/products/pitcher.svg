@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Stoneware pitcher">
+  <rect width="400" height="400" fill="#efe8dc"/>
+  <ellipse cx="200" cy="318" rx="78" ry="12" fill="#d8cfc0"/>
+  <path d="M168 92c-28 10-48 48-48 96 0 70 28 118 80 118s80-48 80-118c0-36-12-68-32-88" fill="#c4b29a"/>
+  <path d="M168 92c22-18 52-18 74 0 8 14 10 28 6 40H162c-4-14-2-28 6-40z" fill="#d8c8b0"/>
+  <path d="M248 140c28 8 46 28 46 52 0 22-14 36-34 40" fill="none" stroke="#8a7358" stroke-width="14" stroke-linecap="round"/>
+  <ellipse cx="200" cy="96" rx="36" ry="10" fill="#e8dfd2"/>
+</svg>

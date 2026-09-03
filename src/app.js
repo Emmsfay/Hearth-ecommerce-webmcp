@@ -46,6 +46,20 @@ const productNotes = {
   candles: { use: "Atmosphere", weight: "light", forWhom: "anyone", ship: "Easy, handle with care" },
   soap: { use: "Sink or guest bath", weight: "very light", forWhom: "anyone", ship: "Easiest to ship" },
   throw: { use: "Sofa or bed", weight: "medium", forWhom: "homebodies", ship: "Bulky but soft" },
+  pitcher: { use: "Water or wine at the table", weight: "medium", forWhom: "hosts", ship: "Fragile glaze" },
+  tumblers: { use: "Everyday drinking", weight: "light", forWhom: "anyone", ship: "Glass, pack with care" },
+  vase: { use: "A small bunch on a shelf", weight: "light", forWhom: "hosts", ship: "Glass, handle with care" },
+  mats: { use: "Table setting", weight: "very light", forWhom: "hosts", ship: "Easy to ship" },
+  tray: { use: "Serving or breakfast", weight: "medium", forWhom: "hosts", ship: "Bulky but flat" },
+  oil: { use: "Cooking and finishing", weight: "light", forWhom: "a cook", ship: "Glass bottle" },
+  salt: { use: "By the stove", weight: "very light", forWhom: "a cook", ship: "Easy to ship" },
+  apron: { use: "Daily cooking", weight: "light", forWhom: "a cook", ship: "Soft, easy to ship" },
+  rest: { use: "Keep the spoon off the hob", weight: "light", forWhom: "a cook", ship: "Easy to ship" },
+  kettle: { use: "Boiling water", weight: "medium-heavy", forWhom: "a cook", ship: "Heavier delivery" },
+  basket: { use: "Storage or a market run", weight: "light", forWhom: "homebodies", ship: "Bulky but light" },
+  lotion: { use: "Hands after the sink", weight: "very light", forWhom: "anyone", ship: "Easiest to ship" },
+  diffuser: { use: "A light scent at home", weight: "light", forWhom: "anyone", ship: "Liquid, pack upright" },
+  hook: { use: "Hall or kitchen", weight: "light", forWhom: "anyone", ship: "Easy to ship" },
 };
 
 const els = {};
@@ -537,36 +551,48 @@ const categoryLabel = {
   care: "Home & care",
 };
 
+function ratingFor(item) {
+  return (4.3 + Math.min((item.sold || 0) / 400, 0.6)).toFixed(1);
+}
+
 function productCard(item) {
-  const button = document.createElement("button");
-  button.className = "card";
-  button.type = "button";
+  const article = document.createElement("article");
+  article.className = "card";
   const off = offLabel(item);
-  button.innerHTML = `<div class="card-media">${off ? `<span class="off"></span>` : ""}<img alt=""></div><div class="card-body"><p class="card-cat"></p><h3></h3><p class="card-blurb"></p><p class="price-row"><span class="now"></span>${item.was ? `<s class="was"></s>` : ""}</p></div>`;
-  setPhoto(button.querySelector("img"), item);
-  button.querySelector(".card-cat").textContent = categoryLabel[item.category] || item.category;
-  button.querySelector("h3").textContent = item.name;
-  button.querySelector(".card-blurb").textContent = item.blurb;
-  button.querySelector(".now").textContent = money(item.price);
-  if (item.was) button.querySelector(".was").textContent = money(item.was);
-  if (off) button.querySelector(".off").textContent = off;
-  button.addEventListener("click", () => openProduct(item.id, "you"));
-  return button;
+  const rating = ratingFor(item);
+  article.innerHTML = `<div class="card-media">${off ? `<span class="off"></span>` : ""}<img alt=""><button type="button" class="card-add" aria-label="Add ${item.name} to cart">+</button></div><button type="button" class="card-open"><div class="card-body"><p class="card-cat"></p><h3></h3><p class="card-meta"><span class="stars">★ ${rating}</span><span class="stock">In stock</span></p><p class="price-row"><span class="now"></span>${item.was ? `<s class="was"></s>` : ""}</p></div></button>`;
+  setPhoto(article.querySelector("img"), item);
+  article.querySelector(".card-cat").textContent = categoryLabel[item.category] || item.category;
+  article.querySelector("h3").textContent = item.name;
+  article.querySelector(".now").textContent = money(item.price);
+  if (item.was) article.querySelector(".was").textContent = money(item.was);
+  if (off) article.querySelector(".off").textContent = off;
+  article.addEventListener("click", (event) => {
+    if (event.target.closest(".card-add")) return;
+    openProduct(item.id, "you");
+  });
+  article.querySelector(".card-add").addEventListener("click", (event) => {
+    event.stopPropagation();
+    addToCart(item.id, 1, "you");
+  });
+  return article;
 }
 
 function renderFeatured() {
   if (els.homeFeatured) {
     els.homeFeatured.replaceChildren();
-    for (const id of ["mug", "skillet", "throw", "board"]) {
+    for (const id of ["mug", "skillet", "pitcher", "kettle", "throw", "tray"]) {
       const item = findProduct(id);
       if (item) els.homeFeatured.append(productCard(item));
     }
   }
   if (els.homeDeals) {
     els.homeDeals.replaceChildren();
-    for (const item of products.filter((row) => row.price <= 40)) {
-      els.homeDeals.append(productCard(item));
-    }
+    const deals = products
+      .filter((row) => row.price <= 40)
+      .sort((a, b) => b.sold - a.sold)
+      .slice(0, 8);
+    for (const item of deals) els.homeDeals.append(productCard(item));
   }
 }
 
@@ -686,9 +712,10 @@ function renderProduct(id) {
     <div class="product-hero">
       <img class="product-photo" alt="">
       <div class="buy-box">
-        <p class="meta">Official Store</p>
+        <p class="meta">${label} · In stock · Free delivery</p>
         <h2></h2>
         <p class="price-row"><span class="now"></span>${item.was ? `<s class="was"></s>` : ""}${off ? ` <span class="off"></span>` : ""}</p>
+        <p class="pdp-rating">★ ${ratingFor(item)} · ${item.sold} sold</p>
         <p class="blurb"></p>
         <p class="detail"></p>
         <p class="ship-note">Promo HEARTH10 takes 10% off at checkout. Demo shop — pay on delivery is not charged.</p>
@@ -1319,9 +1346,9 @@ export function recommendGift({ occasion = "", budget, recipient = "" } = {}, wh
     const pool = products.filter((item) => item.price <= cap);
     const scored = pool.map((item) => {
       let score = 0;
-      if (/cook|kitchen|chef/.test(hay) && ["bowl", "skillet", "board"].includes(item.id)) score += 3;
-      if (/host|dinner|house|gift/.test(hay) && ["bowl", "napkins", "candles", "mug"].includes(item.id)) score += 2;
-      if (/everyday|mug|coffee|tea/.test(hay) && item.id === "mug") score += 3;
+      if (/cook|kitchen|chef/.test(hay) && ["bowl", "skillet", "board", "oil", "apron", "kettle", "rest", "salt"].includes(item.id)) score += 3;
+      if (/host|dinner|house|gift/.test(hay) && ["bowl", "napkins", "candles", "mug", "pitcher", "vase", "tray", "tumblers"].includes(item.id)) score += 2;
+      if (/everyday|mug|coffee|tea/.test(hay) && ["mug", "kettle", "tumblers"].includes(item.id)) score += 3;
       if (item.price <= 40) score += 1;
       return { item, score, notes: productNotes[item.id] };
     }).sort((a, b) => b.score - a.score || a.item.price - b.item.price);

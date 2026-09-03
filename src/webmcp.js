@@ -98,7 +98,7 @@ export async function registerWebMcp(onStatus) {
         maxPrice: { type: "number", description: "Maximum price in GBP. 0 means any." },
       },
     }, (input) => shop.filterProducts(input, "agent")),
-    tool("open_product", "Open a product page by id: mug, napkins, skillet, board, bowl, candles, soap, throw.", {
+    tool("open_product", "Open a product page by catalog id: mug, napkins, skillet, board, bowl, candles, soap, throw, pitcher, tumblers, vase, mats, tray, oil, salt, apron, rest, kettle, basket, lotion, diffuser, hook.", {
       type: "object",
       properties: { id: { type: "string" } },
       required: ["id"],

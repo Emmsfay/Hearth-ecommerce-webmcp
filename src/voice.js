@@ -19,14 +19,28 @@ import { forgetMemory, memorySummary, readMemory, rememberFact, rememberTurn } f
 import { profileStatus, publicCustomer, rememberCustomerLike, upsertCustomer } from "./vault.js";
 
 const aliases = [
-  { id: "mug", words: ["mug", "cup", "stoneware"] },
-  { id: "napkins", words: ["napkin", "napkins", "linen"] },
+  { id: "mug", words: ["mug", "cup"] },
+  { id: "napkins", words: ["napkin", "napkins"] },
   { id: "skillet", words: ["skillet", "pan", "cast iron"] },
   { id: "board", words: ["board", "cutting board"] },
   { id: "bowl", words: ["bowl"] },
   { id: "candles", words: ["candle", "candles", "taper", "beeswax"] },
   { id: "soap", words: ["soap"] },
   { id: "throw", words: ["throw", "blanket", "wool"] },
+  { id: "pitcher", words: ["pitcher", "jug"] },
+  { id: "tumblers", words: ["tumbler", "tumblers", "glasses"] },
+  { id: "vase", words: ["vase"] },
+  { id: "mats", words: ["placemat", "placemats", "mats"] },
+  { id: "tray", words: ["tray"] },
+  { id: "oil", words: ["cruet", "olive oil"] },
+  { id: "salt", words: ["salt", "cellar"] },
+  { id: "apron", words: ["apron"] },
+  { id: "rest", words: ["spoon rest"] },
+  { id: "kettle", words: ["kettle"] },
+  { id: "basket", words: ["basket"] },
+  { id: "lotion", words: ["lotion"] },
+  { id: "diffuser", words: ["diffuser"] },
+  { id: "hook", words: ["hook", "coat hook"] },
 ];
 
 let recognition = null;

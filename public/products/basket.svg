@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Woven basket">
+  <rect width="400" height="400" fill="#efe8dc"/>
+  <path d="M90 150h220l-20 150H110z" fill="#c4a06a"/>
+  <path d="M110 150c20-40 160-40 180 0" fill="none" stroke="#8a6840" stroke-width="12" stroke-linecap="round"/>
+  <path d="M108 190h184M116 230h168M124 270h152" stroke="#a07a48" stroke-width="6"/>
+</svg>

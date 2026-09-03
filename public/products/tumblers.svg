@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Glass tumbler set">
+  <rect width="400" height="400" fill="#e8eef2"/>
+  <ellipse cx="200" cy="322" rx="110" ry="14" fill="#d5dee4"/>
+  <path d="M86 128h72l-8 168H94z" fill="#c5d8e4" opacity="0.85"/>
+  <path d="M168 148h72l-8 148h-56z" fill="#b7cddc" opacity="0.9"/>
+  <path d="M250 128h72l-8 168h-56z" fill="#c5d8e4" opacity="0.8"/>
+  <rect x="88" y="128" width="68" height="10" fill="#eef5f8"/>
+  <rect x="170" y="148" width="68" height="10" fill="#eef5f8"/>
+  <rect x="252" y="128" width="68" height="10" fill="#eef5f8"/>
+</svg>

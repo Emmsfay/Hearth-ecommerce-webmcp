@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Oak coat hook">
+  <rect width="400" height="400" fill="#eee8dc"/>
+  <rect x="150" y="96" width="100" height="208" rx="12" fill="#b08958"/>
+  <circle cx="200" cy="150" r="10" fill="#efe6d8"/>
+  <path d="M200 188c40 8 54 40 28 62" fill="none" stroke="#6b4423" stroke-width="14" stroke-linecap="round"/>
+  <path d="M200 230c36 8 46 34 22 52" fill="none" stroke="#6b4423" stroke-width="14" stroke-linecap="round"/>
+</svg>

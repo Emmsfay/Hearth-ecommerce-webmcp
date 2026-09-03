@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Spoon rest">
+  <rect width="400" height="400" fill="#eeeae3"/>
+  <ellipse cx="200" cy="230" rx="92" ry="70" fill="#d4cfc4"/>
+  <ellipse cx="200" cy="226" rx="70" ry="50" fill="#e8e2d6"/>
+  <path d="M120 168c40-8 90 10 140 4" fill="none" stroke="#b8a090" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="248" cy="210" r="4" fill="#c4b8a8"/>
+  <circle cx="176" cy="240" r="3" fill="#c4b8a8"/>
+</svg>
