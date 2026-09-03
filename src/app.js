@@ -164,6 +164,7 @@ export function bindUi() {
   document.querySelectorAll("[data-reset-demo]").forEach((button) => {
     button.addEventListener("click", () => resetDemoSession());
   });
+  bindMobileMenu();
 
   window.addEventListener("hashchange", () => applyRoute(location.hash));
   renderAccount();
@@ -172,6 +173,23 @@ export function bindUi() {
   updatePlaceButton();
   if (!location.hash) location.hash = "/";
   else applyRoute(location.hash);
+}
+
+function bindMobileMenu() {
+  const toggle = document.querySelector("#btn-menu");
+  const row = document.querySelector(".mast-row");
+  const panel = document.querySelector("#mast-actions");
+  if (!toggle || !row || !panel) return;
+  const setOpen = (open) => {
+    row.classList.toggle("is-menu-open", open);
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    toggle.textContent = open ? "Close" : "Menu";
+  };
+  toggle.addEventListener("click", () => setOpen(!row.classList.contains("is-menu-open")));
+  panel.addEventListener("click", (event) => {
+    if (event.target.closest("a, #btn-cart, #btn-signout, [data-reset-demo]")) setOpen(false);
+  });
+  window.addEventListener("hashchange", () => setOpen(false));
 }
 
 function bindPasswordToggles() {

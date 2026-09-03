@@ -125,6 +125,17 @@ button, input, select { font: inherit; }
   justify-content: flex-end;
 }
 
+.menu-toggle {
+  display: none;
+  margin-left: auto;
+  background: var(--ink);
+  color: #fff;
+  border: 0;
+  border-radius: 4px;
+  font-weight: 700;
+  padding: 0.55rem 0.85rem;
+}
+
 .mast-link, .text-btn, .cat-menu a, .cat-menu button {
   background: none;
   border: 0;
@@ -1258,7 +1269,55 @@ body:has(.voice-panel.is-open) .voice-fab { display: none; }
     max-width: none;
     min-width: 0;
   }
-  .mast-actions { margin-left: auto; }
+  .menu-toggle { display: inline-flex; align-items: center; }
+  .mast-actions {
+    display: none;
+    order: 4;
+    flex: 1 1 100%;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    margin-left: 0;
+    gap: 0;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0.25rem 0.35rem;
+  }
+  .mast-row.is-menu-open .mast-actions { display: flex; }
+  .mast-actions .account-slot,
+  .mast-actions .cart-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 0;
+  }
+  .mast-actions .mast-link,
+  .mast-actions .text-btn,
+  .mast-actions .reset-demo,
+  .mast-actions .cart-btn {
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
+    border-radius: 6px;
+    padding: 0.85rem 0.75rem;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    font-weight: 600;
+    box-shadow: none;
+  }
+  .mast-actions .cart-btn {
+    background: var(--ink);
+    color: #fff;
+    margin: 0.25rem 0.2rem 0.4rem;
+  }
+  .mast-actions .mast-link + .mast-link,
+  .mast-actions .reset-demo,
+  .mast-actions .text-btn {
+    border-top: 1px solid var(--line);
+  }
   .catbar { top: auto; position: relative; }
   .catbar-row {
     flex-wrap: nowrap;
@@ -1284,14 +1343,14 @@ body:has(.voice-panel.is-open) .voice-fab { display: none; }
 }
 
 @media (max-width: 560px) {
-  .mast-actions .reset-demo { font-size: 0.72rem; padding: 0.3rem 0.5rem; }
+  .mast-actions .reset-demo { font-size: 0.92rem; padding: 0.85rem 0.75rem; }
   .foot-grid,
   .side-promos,
   .split { grid-template-columns: 1fr; }
   .catalog,
   .catalog.dense { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .preheader-inner p:not(.pill):not(:first-child) { display: none; }
-  .mast-link[href="#/about"] { display: none; }
+  .mast-link[href="#/about"] { display: block; }
   .filters { flex-wrap: nowrap; overflow-x: auto; }
   .connect-banner { text-align: left; font-size: 0.82rem; }
   .drawer-card { width: 100vw; }

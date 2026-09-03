@@ -6,7 +6,7 @@
     <meta name="description" content="Hearth is a WebMCP shop. People browse as usual. Agents search, fill the cart, and start checkout on the same live page." />
     <title>Hearth, goods for the table</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/src/styles.css?v=shop2" />
+    <link rel="stylesheet" href="/src/styles.css?v=menu1" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
@@ -28,12 +28,13 @@
           <img src="/favicon.svg" alt="" width="40" height="40" />
           <span>Hearth</span>
         </a>
+        <button type="button" id="btn-menu" class="menu-toggle" aria-expanded="false" aria-controls="mast-actions">Menu</button>
         <form id="search-form" class="search" role="search">
           <label class="sr-only" for="search">Search</label>
           <input id="search" type="search" placeholder="Search products, brands and categories" />
           <button type="submit">Search</button>
         </form>
-        <div class="mast-actions">
+        <div id="mast-actions" class="mast-actions">
           <div id="account-slot" class="account-slot">
             <a href="#/login" id="link-login" class="mast-link">Account</a>
             <a href="#/signup" id="link-signup" class="mast-link">Sign up</a>
@@ -569,6 +570,6 @@
         }
       });
     </script>
-    <script type="module" src="/src/main.js?v=priv4"></script>
+    <script type="module" src="/src/main.js?v=menu1"></script>
   </body>
 </html>
