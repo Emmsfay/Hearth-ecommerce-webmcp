@@ -183,7 +183,7 @@ function bindMobileMenu() {
   const setOpen = (open) => {
     row.classList.toggle("is-menu-open", open);
     toggle.setAttribute("aria-expanded", open ? "true" : "false");
-    toggle.textContent = open ? "Close" : "Menu";
+    toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
   };
   toggle.addEventListener("click", () => setOpen(!row.classList.contains("is-menu-open")));
   panel.addEventListener("click", (event) => {

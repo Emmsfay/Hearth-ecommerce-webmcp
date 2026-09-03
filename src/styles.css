@@ -128,12 +128,48 @@ button, input, select { font: inherit; }
 .menu-toggle {
   display: none;
   margin-left: auto;
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0;
   background: var(--ink);
   color: #fff;
   border: 0;
   border-radius: 4px;
-  font-weight: 700;
-  padding: 0.55rem 0.85rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-toggle-bars {
+  position: relative;
+  display: block;
+  width: 1.1rem;
+  height: 0.85rem;
+}
+
+.menu-toggle-bars span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #fff;
+  border-radius: 1px;
+  transition: transform 0.18s ease, top 0.18s ease, opacity 0.18s ease;
+}
+
+.menu-toggle-bars span:nth-child(1) { top: 0; }
+.menu-toggle-bars span:nth-child(2) { top: 0.32rem; }
+.menu-toggle-bars span:nth-child(3) { top: 0.64rem; }
+
+.mast-row.is-menu-open .menu-toggle-bars span:nth-child(1) {
+  top: 0.32rem;
+  transform: rotate(45deg);
+}
+
+.mast-row.is-menu-open .menu-toggle-bars span:nth-child(2) { opacity: 0; }
+
+.mast-row.is-menu-open .menu-toggle-bars span:nth-child(3) {
+  top: 0.32rem;
+  transform: rotate(-45deg);
 }
 
 .mast-link, .text-btn, .cat-menu a, .cat-menu button {
