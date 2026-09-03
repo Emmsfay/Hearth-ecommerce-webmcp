@@ -33,10 +33,8 @@ const probeLine = document.querySelector("#mcp-probe");
 const demo = document.querySelector("#btn-gift-demo");
 if (demo) demo.addEventListener("click", () => runGiftDemo());
 
-function describeProbe(probe) {
-  if (!probe) return "";
-  if (probe.framed) return "This page is inside a frame. ChatGPT cannot see site tools in iframes — open http://localhost:5176 as the only address.";
-  return `API probe: navigator.modelContext=${probe.navigator ? "yes" : "no"}, document.modelContext=${probe.document ? "yes" : "no"}.`;
+function inAgentBrowser(probe) {
+  return Boolean(probe?.navigator || probe?.document || probe?.framed);
 }
 
 function showToolCount(count) {
@@ -55,6 +53,16 @@ void registerWebMcp((state, count, probe) => {
   }
   status.textContent = "WebMCP: waiting for agent browser";
   status.className = "pill wait";
+  if (!help) return;
+  if (!inAgentBrowser(probe)) {
+    help.hidden = true;
+    if (probeLine) probeLine.textContent = "";
+    return;
+  }
   help.hidden = false;
-  if (probeLine) probeLine.textContent = describeProbe(probe);
+  if (probeLine) {
+    probeLine.textContent = probe.framed
+      ? " Open this shop as the only tab — not inside a frame."
+      : "";
+  }
 });
