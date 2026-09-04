@@ -5,6 +5,11 @@ COPY index.html favicon.svg /usr/share/nginx/html/
 COPY src /usr/share/nginx/html/src
 COPY public /usr/share/nginx/html/public
 
+RUN groupadd --system app && useradd --system --gid app --home-dir /app --no-create-home app \
+    && chown -R app:app /app
+
+USER app
+
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
